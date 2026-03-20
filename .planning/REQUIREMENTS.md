@@ -75,25 +75,25 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SRCH-01 | Phase 4 | Pending |
-| SRCH-02 | Phase 4 | Pending |
+| DATA-01 | Phase 1 | Pending |
+| DATA-03 | Phase 1 | Pending |
 | RECD-01 | Phase 2 | Pending |
 | RECD-02 | Phase 2 | Pending |
 | RECD-03 | Phase 2 | Pending |
-| RECD-04 | Phase 1 | Pending |
-| RECD-05 | Phase 1 | Pending |
 | RECD-06 | Phase 2 | Pending |
 | RECD-07 | Phase 2 | Pending |
 | RECD-08 | Phase 2 | Pending |
 | POS-01 | Phase 2 | Pending |
 | POS-02 | Phase 2 | Pending |
 | POS-03 | Phase 2 | Pending |
-| DATA-01 | Phase 1 | Pending |
-| DATA-02 | Phase 4 | Pending |
-| DATA-03 | Phase 1 | Pending |
+| SRCH-01 | Phase 3 | Pending |
+| SRCH-02 | Phase 3 | Pending |
+| RECD-04 | Phase 3 | Pending |
+| RECD-05 | Phase 3 | Pending |
+| DATA-02 | Phase 3 | Pending |
 | COMP-01 | Phase 4 | Pending |
-| ENRI-01 | Phase 5 | Pending |
-| ENRI-02 | Phase 5 | Pending |
+| ENRI-01 | Phase 4 | Pending |
+| ENRI-02 | Phase 4 | Pending |
 
 **Coverage:**
 - v1 requirements: 19 total
@@ -102,4 +102,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-03-19*
-*Last updated: 2026-03-19 after initial definition*
+*Last updated: 2026-03-19 after roadmap creation*
