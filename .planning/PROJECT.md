@@ -12,15 +12,14 @@ Give a clear start/sit recommendation with transparent reasoning (matchup grade,
 
 ### Validated
 
-(None yet — ship to validate)
+- [x] Player data is sourced from an existing NFL data API (Sleeper + nflreadpy/nflverse) — Validated in Phase 1: Data Foundation
+- [x] Recommendations update throughout the week as new info comes in (2-hour cron refresh) — Validated in Phase 1: Data Foundation
 
 ### Active
 
 - [ ] User can look up any NFL player and see a start/sit recommendation for the current week
 - [ ] Each recommendation shows reasoning (matchup grade, injury status, recent target/snap usage)
-- [ ] Player data is sourced from an existing NFL data API (ESPN API or similar)
 - [ ] Site covers all fantasy-relevant positions (QB, RB, WR, TE, K, DST)
-- [ ] Recommendations update throughout the week as new info (injuries, weather) comes in
 
 ### Out of Scope
 
@@ -50,5 +49,9 @@ Give a clear start/sit recommendation with transparent reasoning (matchup grade,
 | Show reasoning alongside recommendation | Trust comes from transparency, not just a score | — Pending |
 | Web app (not mobile) | Web-first, keep scope tight for v1 | — Pending |
 
+## Current State
+
+Phase 1 complete — data pipeline operational. SQLite DB with Player (28 cols) + Matchup tables, Sleeper API client, nflreadpy wrappers (stats/snaps/DVP), normalization layer, refresh orchestrator with off-season guard. 30 tests passing. Ready for Phase 2: Recommendation Engine.
+
 ---
-*Last updated: 2026-03-19 after initialization*
+*Last updated: 2026-03-22 after Phase 1: Data Foundation*
