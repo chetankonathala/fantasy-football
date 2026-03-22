@@ -29,9 +29,9 @@
 
 ### Data Freshness
 
-- [ ] **DATA-01**: Injury / practice status refreshes automatically throughout the week (not just once on Monday)
+- [x] **DATA-01**: Injury / practice status refreshes automatically throughout the week (not just once on Monday)
 - [ ] **DATA-02**: Each recommendation card shows a data freshness timestamp so user knows how current the data is
-- [ ] **DATA-03**: App shows a clear "season not active" state during the NFL off-season rather than stale data
+- [x] **DATA-03**: App shows a clear "season not active" state during the NFL off-season rather than stale data
 
 ### Comparison & Enrichment
 
@@ -75,8 +75,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DATA-01 | Phase 1 | Pending |
-| DATA-03 | Phase 1 | Pending |
+| DATA-01 | Phase 1 | Complete |
+| DATA-03 | Phase 1 | Complete |
 | RECD-01 | Phase 2 | Pending |
 | RECD-02 | Phase 2 | Pending |
 | RECD-03 | Phase 2 | Pending |
