@@ -28,7 +28,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. Weekly matchup data (opponent rank vs. position) and usage stats (snap %, target share, carry share) for the last 4 weeks can be retrieved via nflreadpy and joined to players using the nflverse canonical player ID crosswalk
   3. The data refresh job runs on a schedule and updates injury status at least every 2 hours during the NFL week without manual intervention
   4. Querying the system during the NFL off-season returns a clear "season not active" flag rather than stale or empty data
-**Plans**: TBD
+**Plans:** 3 plans
+Plans:
+- [ ] 01-01-PLAN.md — Project scaffolding, DB models (Player + Matchup), Alembic, upsert helpers, test infrastructure
+- [ ] 01-02-PLAN.md — Fetch layer (Sleeper API client, nflreadpy wrappers, DVP computation) and normalization layer
+- [ ] 01-03-PLAN.md — Refresh orchestration script with off-season guard, error handling, logging, and cron schedule
 
 ### Phase 2: Recommendation Engine
 **Goal**: A pure, isolated scoring function takes typed player signals and returns a deterministic START/SIT/FLEX verdict plus a structured 3-5 factor reasoning array, covering all six fantasy positions
@@ -71,7 +75,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Data Foundation | 0/TBD | Not started | - |
+| 1. Data Foundation | 0/3 | Planning complete | - |
 | 2. Recommendation Engine | 0/TBD | Not started | - |
 | 3. Full-Stack Core | 0/TBD | Not started | - |
 | 4. Reliability & Enhancement | 0/TBD | Not started | - |
