@@ -12,7 +12,7 @@ This roadmap delivers a personal start/sit recommendation tool in four phases, e
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Data Foundation** - Ingest, normalize, and continuously refresh all player and matchup data
+- [x] **Phase 1: Data Foundation** - Ingest, normalize, and continuously refresh all player and matchup data (completed 2026-03-22)
 - [ ] **Phase 2: Recommendation Engine** - Pure scoring function that converts signals into a verified START/SIT/FLEX verdict with structured reasoning
 - [ ] **Phase 3: Full-Stack Core** - API routes, player search, and complete recommendation UI wired end-to-end
 - [ ] **Phase 4: Reliability & Enhancement** - Scheduled refresh automation, player comparison, Vegas overlay, and weather signals
@@ -28,7 +28,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. Weekly matchup data (opponent rank vs. position) and usage stats (snap %, target share, carry share) for the last 4 weeks can be retrieved via nflreadpy and joined to players using the nflverse canonical player ID crosswalk
   3. The data refresh job runs on a schedule and updates injury status at least every 2 hours during the NFL week without manual intervention
   4. Querying the system during the NFL off-season returns a clear "season not active" flag rather than stale or empty data
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 Plans:
 - [ ] 01-01-PLAN.md — Project scaffolding, DB models (Player + Matchup), Alembic, upsert helpers, test infrastructure
 - [ ] 01-02-PLAN.md — Fetch layer (Sleeper API client, nflreadpy wrappers, DVP computation) and normalization layer
@@ -75,7 +75,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Data Foundation | 2/3 | In Progress|  |
+| 1. Data Foundation | 2/3 | Complete    | 2026-03-22 |
 | 2. Recommendation Engine | 0/TBD | Not started | - |
 | 3. Full-Stack Core | 0/TBD | Not started | - |
 | 4. Reliability & Enhancement | 0/TBD | Not started | - |
