@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 01-data-foundation 01-01-PLAN.md
-last_updated: "2026-03-22T20:07:22.306Z"
+stopped_at: Completed 01-data-foundation 01-02-PLAN.md
+last_updated: "2026-03-22T20:13:02.426Z"
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 3
-  completed_plans: 1
+  completed_plans: 2
 ---
 
 # Project State
@@ -50,6 +50,7 @@ Plan: 2 of 3
 | Plan | Duration | Tasks | Files |
 |------|----------|-------|-------|
 | Phase 01-data-foundation P01 | 4min | 2 tasks | 18 files |
+| Phase 01-data-foundation P02 | 12min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -64,6 +65,8 @@ Recent decisions affecting current work:
 - [Pre-build]: Recommendation engine is a pure function (PlayerSignals -> Recommendation); reasoning stored as structured fields, not computed at render time
 - [Phase 01-data-foundation]: Player and Matchup ORM models use SQLAlchemy DeclarativeBase; canonical join key is nflverse_id; week1-4 usage stats stored as explicit Float columns
 - [Phase 01-data-foundation]: Alembic configured with render_as_batch=True for SQLite ALTER TABLE support; upsert uses insert().on_conflict_do_update() — no full-wipe refresh
+- [Phase 01-data-foundation]: compute_dvp infers position from play type columns (passer/rusher/receiver player_id) since PBP rows have no position field; rank 1 = most points allowed = easiest matchup
+- [Phase 01-data-foundation]: normalize_players skips players with no nflverse crosswalk entry — no string-based joins permitted; week1=most recent (current_week-1) through week4=oldest convention established
 
 ### Pending Todos
 
@@ -76,6 +79,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-22T20:07:22.305Z
-Stopped at: Completed 01-data-foundation 01-01-PLAN.md
+Last session: 2026-03-22T20:13:02.425Z
+Stopped at: Completed 01-data-foundation 01-02-PLAN.md
 Resume file: None
