@@ -1,0 +1,12 @@
+# Fantasy Football Data Refresh — runs every 2 hours (DATA-01 requirement)
+# The refresh script handles off-season detection internally (DATA-03).
+# Cron always fires; the script returns early during off-season.
+#
+# Installation:
+#   1. Replace /path/to/fantasy-football with your actual project path
+#   2. Run: crontab -e
+#   3. Paste the line below (without the leading #)
+#
+# Logs: logs/refresh.log (7-day rotation) + cron stdout capture
+#
+0 */2 * * * /path/to/fantasy-football/.venv/bin/python /path/to/fantasy-football/scripts/refresh.py >> /path/to/fantasy-football/logs/cron.log 2>&1
