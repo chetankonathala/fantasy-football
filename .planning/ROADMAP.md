@@ -44,7 +44,10 @@ Plans:
   3. Scoring format (PPR / half-PPR / standard) changes the target share weight and updates the projected points and verdict accordingly
   4. Players with fewer than 4 games of data receive a low-confidence flag in the output that surfaces in the recommendation
   5. The engine is covered by a test suite that verifies each signal combination in isolation and the composite verdict for representative inputs per position
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 02-01-PLAN.md — Type contracts (enums, dataclasses, stubs) and full RED test suite (16 tests)
+- [ ] 02-02-PLAN.md — Complete engine implementation (scoring logic, reasoning builder, format modifiers) — all tests GREEN
 
 ### Phase 3: Full-Stack Core
 **Goal**: A user can search for any NFL player by name, select them, and see a complete recommendation card with all signals — verdict, reasoning, matchup grade, injury status, usage trends, projected points, scoring format selector, and data freshness timestamp — sourced from live data
@@ -75,7 +78,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Data Foundation | 2/3 | Complete    | 2026-03-22 |
-| 2. Recommendation Engine | 0/TBD | Not started | - |
+| 1. Data Foundation | 3/3 | Complete    | 2026-03-22 |
+| 2. Recommendation Engine | 0/2 | In progress | - |
 | 3. Full-Stack Core | 0/TBD | Not started | - |
 | 4. Reliability & Enhancement | 0/TBD | Not started | - |
