@@ -14,6 +14,9 @@ Give a clear start/sit recommendation with transparent reasoning (matchup grade,
 
 - [x] Player data is sourced from an existing NFL data API (Sleeper + nflreadpy/nflverse) — Validated in Phase 1: Data Foundation
 - [x] Recommendations update throughout the week as new info comes in (2-hour cron refresh) — Validated in Phase 1: Data Foundation
+- [x] START/SIT/FLEX verdict with structured 3-5 factor reasoning for all 6 positions — Validated in Phase 2: Recommendation Engine
+- [x] Scoring format (PPR/half-PPR/standard) changes verdict and signal weights — Validated in Phase 2: Recommendation Engine
+- [x] Low-confidence flag for players with fewer than 4 games of data — Validated in Phase 2: Recommendation Engine
 
 ### Active
 
@@ -51,7 +54,9 @@ Give a clear start/sit recommendation with transparent reasoning (matchup grade,
 
 ## Current State
 
-Phase 1 complete — data pipeline operational. SQLite DB with Player (28 cols) + Matchup tables, Sleeper API client, nflreadpy wrappers (stats/snaps/DVP), normalization layer, refresh orchestrator with off-season guard. 30 tests passing. Ready for Phase 2: Recommendation Engine.
+Phase 2 complete — recommendation engine operational. Pure scoring function (`score_player`) takes typed PlayerSignals and returns START/SIT/FLEX verdict + 3-5 template-string reasons. Covers all 6 positions (QB/RB/WR/TE/K/DST), PPR/half-PPR/standard format modifiers, injury hard-veto, weight redistribution for absent signals, low-confidence flagging. 49 tests passing. Ready for Phase 3: Full-Stack Core.
+
+*Last updated: 2026-03-25 after Phase 2: Recommendation Engine*
 
 ---
 *Last updated: 2026-03-22 after Phase 1: Data Foundation*
