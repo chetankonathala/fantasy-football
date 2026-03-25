@@ -12,20 +12,20 @@
 
 ### Recommendation
 
-- [ ] **RECD-01**: User can see a clear START / SIT / FLEX verdict for any player for the current week
-- [ ] **RECD-02**: Each recommendation includes a structured reasoning narrative (3-5 plain-English factors behind the call)
-- [ ] **RECD-03**: User can see the matchup grade (opponent rank vs. position, based on DVP — points allowed to position)
+- [x] **RECD-01**: User can see a clear START / SIT / FLEX verdict for any player for the current week
+- [x] **RECD-02**: Each recommendation includes a structured reasoning narrative (3-5 plain-English factors behind the call)
+- [x] **RECD-03**: User can see the matchup grade (opponent rank vs. position, based on DVP — points allowed to position)
 - [ ] **RECD-04**: User can see the player's injury / practice status (Q/D/Out) on the recommendation page
 - [ ] **RECD-05**: User can see usage trends for the player over the last 3-4 weeks (snap %, target share for WR/TE, carry share for RB)
-- [ ] **RECD-06**: User can see projected fantasy points for the player for the current week
-- [ ] **RECD-07**: User can select scoring format (PPR / half-PPR / standard) and have recommendation update accordingly
-- [ ] **RECD-08**: Low-confidence recommendations (fewer than 4 games of data) are visibly flagged to the user
+- [x] **RECD-06**: User can see projected fantasy points for the player for the current week
+- [x] **RECD-07**: User can select scoring format (PPR / half-PPR / standard) and have recommendation update accordingly
+- [x] **RECD-08**: Low-confidence recommendations (fewer than 4 games of data) are visibly flagged to the user
 
 ### Positions
 
-- [ ] **POS-01**: Recommendations are available for QB, RB, WR, and TE positions (skill positions using full signal set)
-- [ ] **POS-02**: Recommendations are available for K (Kicker) using matchup-based signals (defense allowed to kickers)
-- [ ] **POS-03**: Recommendations are available for DST (Defense/Special Teams) using opponent offense rank
+- [x] **POS-01**: Recommendations are available for QB, RB, WR, and TE positions (skill positions using full signal set)
+- [x] **POS-02**: Recommendations are available for K (Kicker) using matchup-based signals (defense allowed to kickers)
+- [x] **POS-03**: Recommendations are available for DST (Defense/Special Teams) using opponent offense rank
 
 ### Data Freshness
 
@@ -77,15 +77,15 @@ Which phases cover which requirements. Updated during roadmap creation.
 |-------------|-------|--------|
 | DATA-01 | Phase 1 | Complete |
 | DATA-03 | Phase 1 | Complete |
-| RECD-01 | Phase 2 | Pending |
-| RECD-02 | Phase 2 | Pending |
-| RECD-03 | Phase 2 | Pending |
-| RECD-06 | Phase 2 | Pending |
-| RECD-07 | Phase 2 | Pending |
-| RECD-08 | Phase 2 | Pending |
-| POS-01 | Phase 2 | Pending |
-| POS-02 | Phase 2 | Pending |
-| POS-03 | Phase 2 | Pending |
+| RECD-01 | Phase 2 | Complete |
+| RECD-02 | Phase 2 | Complete |
+| RECD-03 | Phase 2 | Complete |
+| RECD-06 | Phase 2 | Complete |
+| RECD-07 | Phase 2 | Complete |
+| RECD-08 | Phase 2 | Complete |
+| POS-01 | Phase 2 | Complete |
+| POS-02 | Phase 2 | Complete |
+| POS-03 | Phase 2 | Complete |
 | SRCH-01 | Phase 3 | Pending |
 | SRCH-02 | Phase 3 | Pending |
 | RECD-04 | Phase 3 | Pending |

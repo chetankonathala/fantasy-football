@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: "Completed 02-01-PLAN.md"
-last_updated: "2026-03-25T18:00:25Z"
+status: unknown
+stopped_at: Completed 02-02-PLAN.md
+last_updated: "2026-03-25T18:31:12.708Z"
 progress:
   total_phases: 4
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 5
-  completed_plans: 4
+  completed_plans: 5
 ---
 
 # Project State
@@ -53,6 +53,7 @@ Plan: 2 of 2
 | Phase 01-data-foundation P02 | 12min | 2 tasks | 7 files |
 | Phase 01-data-foundation P03 | 5min | 2 tasks | 4 files |
 | Phase 02-recommendation-engine P01 | 2min | 2 tasks | 2 files |
+| Phase 02-recommendation-engine P02 | 26min | 1 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -73,6 +74,8 @@ Recent decisions affecting current work:
 - [Phase 01-data-foundation]: Off-season guard uses week range 1-22; cron fires unconditionally and script handles DATA-03 internally
 - [Phase 02-recommendation-engine P01]: score_player() dispatcher routes by isinstance to _score_skill/_score_kicker/_score_dst; Recommendation dataclass is the Phase 3 API contract — shape frozen post-Phase 2
 - [Phase 02-recommendation-engine P01]: SkillSignals/KickerSignals/DSTSignals are separate frozen dataclasses; engine.py has zero SQLAlchemy imports enforced
+- [Phase 02-recommendation-engine]: PPR modifier applied as additive delta (not renormalized) to guarantee WR/TE PPR score > STANDARD when matchup sub-score dominates
+- [Phase 02-recommendation-engine]: usage_sub blends snap_pct (0.4) + usage_share (0.6) for WR/TE/RB; QB uses snap_pct only
 
 ### Pending Todos
 
@@ -85,6 +88,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-25T18:00:25Z
-Stopped at: Completed 02-01-PLAN.md
-Resume file: .planning/phases/02-recommendation-engine/02-02-PLAN.md
+Last session: 2026-03-25T18:31:12.706Z
+Stopped at: Completed 02-02-PLAN.md
+Resume file: None

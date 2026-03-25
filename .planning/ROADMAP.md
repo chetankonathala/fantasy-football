@@ -13,7 +13,7 @@ This roadmap delivers a personal start/sit recommendation tool in four phases, e
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Data Foundation** - Ingest, normalize, and continuously refresh all player and matchup data (completed 2026-03-22)
-- [ ] **Phase 2: Recommendation Engine** - Pure scoring function that converts signals into a verified START/SIT/FLEX verdict with structured reasoning
+- [x] **Phase 2: Recommendation Engine** - Pure scoring function that converts signals into a verified START/SIT/FLEX verdict with structured reasoning (completed 2026-03-25)
 - [ ] **Phase 3: Full-Stack Core** - API routes, player search, and complete recommendation UI wired end-to-end
 - [ ] **Phase 4: Reliability & Enhancement** - Scheduled refresh automation, player comparison, Vegas overlay, and weather signals
 
@@ -44,7 +44,7 @@ Plans:
   3. Scoring format (PPR / half-PPR / standard) changes the target share weight and updates the projected points and verdict accordingly
   4. Players with fewer than 4 games of data receive a low-confidence flag in the output that surfaces in the recommendation
   5. The engine is covered by a test suite that verifies each signal combination in isolation and the composite verdict for representative inputs per position
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 Plans:
 - [ ] 02-01-PLAN.md — Type contracts (enums, dataclasses, stubs) and full RED test suite (16 tests)
 - [ ] 02-02-PLAN.md — Complete engine implementation (scoring logic, reasoning builder, format modifiers) — all tests GREEN
@@ -79,6 +79,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Data Foundation | 3/3 | Complete    | 2026-03-22 |
-| 2. Recommendation Engine | 1/2 | In progress | - |
+| 2. Recommendation Engine | 2/2 | Complete   | 2026-03-25 |
 | 3. Full-Stack Core | 0/TBD | Not started | - |
 | 4. Reliability & Enhancement | 0/TBD | Not started | - |
