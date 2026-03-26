@@ -57,7 +57,7 @@ Exceptions:
 |------|------|--------|-------------|
 | Body | 16px | 400 (regular) | 1.5 |
 | Label | 14px | 400 (regular) | 1.4 |
-| Heading | 20px | 600 (semibold) | 1.2 |
+| Heading | 20px | 700 (bold) | 1.2 |
 | Display | 36px | 700 (bold) | 1.1 |
 
 Notes:
@@ -65,7 +65,7 @@ Notes:
 - Heading role is used for the player name on the player detail page and section labels on the card.
 - Label role is used for signal row labels (Matchup Grade, Injury Status, Snap %, etc.) and the data freshness stamp.
 - Body role is used for reasoning factor text and autocomplete suggestion lines.
-- Two weights in play for body/label (400) and heading/display (600/700). Display uses 700 to maximize verdict impact.
+- Two weights: 400 (regular) for Body/Label, 700 (bold) for Heading/Display. The Display size difference (36px vs 20px heading) provides sufficient visual differentiation without a separate weight step.
 
 **Source:** CONTEXT.md §Page Structure ("Verdict is the hero element — big, bold, color-coded"); defaults applied for sizes and line heights.
 
@@ -127,7 +127,7 @@ Silver (`#A5ACAF`) reserved for:
 
 - Server component
 - Vertically + horizontally centered layout using flexbox (`min-h-screen items-center justify-center`)
-- App name: "Fantasy Advisor" — Display heading, weight 600, white, above search
+- App name: "Fantasy Advisor" — Display heading, weight 700, white, above search
 - Subtitle: "Start/Sit clarity, instantly." — Body, silver `#A5ACAF`, below app name
 - SearchBar centered, width `min(100%, 480px)`
 - No other content — no featured players, no recent searches, no footer
@@ -135,14 +135,14 @@ Silver (`#A5ACAF`) reserved for:
 ### Nav/Header (in `app/layout.tsx`)
 
 - Fixed top, full-width, background `#111827`, border-bottom `#004C54` 1px
-- Left: app name "Fantasy Advisor" — Label size (14px), semibold, white, links to `/`
+- Left: app name "Fantasy Advisor" — Label size (14px), bold (700), white, links to `/`
 - Right: SearchBar, constrained width ~320px
 - Height: 56px (padding 12px top/bottom to hit 56px; not a spacing-scale value but a layout constant)
 
 ### Player Detail Page (`app/player/[id]/page.tsx`)
 
 - Server component (data fetched server-side)
-- Player header: `{full_name}` as Heading (20px, semibold) + `{position} · {team}` as Label (14px, silver) inline below
+- Player header: `{full_name}` as Heading (20px, bold) + `{position} · {team}` as Label (14px, silver) inline below
 - RecommendationCard renders below the header with `lg` (24px) top gap
 
 ### RecommendationCard (`components/RecommendationCard.tsx`)
@@ -157,7 +157,7 @@ Silver (`#A5ACAF`) reserved for:
 
 **Scoring format selector (below verdict):**
 - Three pills: PPR / half-PPR / standard
-- Active pill: background `#004C54`, text white, weight 600
+- Active pill: background `#004C54`, text white, weight 700
 - Inactive pill: background transparent, border `#A5ACAF` 1px, text `#A5ACAF`
 - Pill height: 32px, padding 12px horizontal, gap `sm` (8px) between pills
 - Changing selection triggers a new API call with `?format=` param; verdict and score update in place
@@ -207,8 +207,8 @@ Silver (`#A5ACAF`) reserved for:
 | Search empty state body | "Try a different name or check the spelling." |
 | Loading state label | "Loading recommendation..." (screen-reader aria-label on skeleton) |
 | Error state heading | "Could not load recommendation" |
-| Error state body | "There was a problem fetching data for this player. Try again or search for another player." |
-| Error state CTA | "Try again" (retry button) |
+| Error state body | "There was a problem fetching data for this player. Retry loading or search for another player." |
+| Error state CTA | "Retry Loading" (retry button) |
 | Off-season state heading | "Season not active" |
 | Off-season state body | "NFL data is unavailable during the off-season. Check back when the season starts." |
 | Low-confidence badge | "Low confidence — limited data" |
@@ -250,7 +250,7 @@ Destructive actions in Phase 3: none.
 | Format pill | Active | `#004C54` bg, white text, no border |
 | Format pill | Hover (inactive) | `#004C54` at 20% opacity bg |
 | RecommendationCard | Loading | Full skeleton pulse, no content |
-| RecommendationCard | Error | Error panel with "Try again" button |
+| RecommendationCard | Error | Error panel with "Retry Loading" button |
 | Injury badge | Active | `#22C55E` text, `#052E16` bg |
 | Injury badge | Questionable | `#F59E0B` text, `#1C1400` bg |
 | Injury badge | Doubtful | `#F87171` text, `#1A0000` bg |
@@ -264,7 +264,7 @@ Destructive actions in Phase 3: none.
   - White `#F9FAFB` on `#0A0A0A` → 18.7:1 (passes AAA)
   - White on `#004C54` → 7.2:1 (passes AAA)
   - `#22C55E` on `#0A0A0A` → 4.8:1 (passes AA)
-  - `#EF4444` on `#0A0A0A` → 4.5:1 (passes AA — borderline; use weight 600+ for verdict text)
+  - `#EF4444` on `#0A0A0A` → 4.5:1 (passes AA — borderline; use weight 700 for verdict text)
   - `#F59E0B` on `#0A0A0A` → 4.9:1 (passes AA)
   - `#A5ACAF` on `#0A0A0A` → 4.6:1 (passes AA)
 - Touch targets: 44px minimum height for all interactive elements (format pills, autocomplete items, nav links)
