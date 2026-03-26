@@ -59,7 +59,12 @@ Plans:
   3. The recommendation page shows the player's injury and practice status (Q/D/Out) and usage trends (snap %, target share or carry share) for the last 3-4 weeks
   4. Every recommendation card displays a data freshness timestamp so the user can see how current the underlying data is
   5. The scoring format selector (PPR / half-PPR / standard) is present and changing it updates the verdict and projected points without a page reload
-**Plans**: TBD
+**Plans:** 4 plans
+Plans:
+- [ ] 03-01-PLAN.md — FastAPI routes (search + player detail) with TDD tests, Sleeper projected-points fetch
+- [ ] 03-02-PLAN.md — Next.js scaffolding with Eagles dark theme, SearchBar autocomplete, home page
+- [ ] 03-03-PLAN.md — RecommendationCard with verdict, signals, format selector, FreshnessStamp
+- [ ] 03-04-PLAN.md — End-to-end verification checkpoint (servers + human visual review)
 
 ### Phase 4: Reliability & Enhancement
 **Goal**: The core recommendation loop is hardened with automated background refresh and extended with player comparison, Vegas implied totals, and weather flags
@@ -80,5 +85,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 |-------|----------------|--------|-----------|
 | 1. Data Foundation | 3/3 | Complete    | 2026-03-22 |
 | 2. Recommendation Engine | 2/2 | Complete    | 2026-03-25 |
-| 3. Full-Stack Core | 0/TBD | Not started | - |
+| 3. Full-Stack Core | 0/4 | Planning complete | - |
 | 4. Reliability & Enhancement | 0/TBD | Not started | - |
