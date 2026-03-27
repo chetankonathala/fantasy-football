@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Phase 3 context gathered
-last_updated: "2026-03-25T19:01:31.062Z"
+stopped_at: Completed 03-full-stack-core/03-01-PLAN.md
+last_updated: "2026-03-27T14:22:53.563Z"
 progress:
   total_phases: 4
   completed_phases: 2
-  total_plans: 5
-  completed_plans: 5
+  total_plans: 9
+  completed_plans: 7
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-19)
 
 **Core value:** Give a clear start/sit recommendation with transparent reasoning (matchup grade, injury status, recent usage) so the user can stop second-guessing and win more weeks without spending hours on research.
-**Current focus:** Phase 02 — recommendation-engine
+**Current focus:** Phase 03 — full-stack-core
 
 ## Current Position
 
-Phase: 02 (recommendation-engine) — EXECUTING
-Plan: 2 of 2
+Phase: 03 (full-stack-core) — EXECUTING
+Plan: 1 of 4
 
 ## Performance Metrics
 
@@ -54,6 +54,7 @@ Plan: 2 of 2
 | Phase 01-data-foundation P03 | 5min | 2 tasks | 4 files |
 | Phase 02-recommendation-engine P01 | 2min | 2 tasks | 2 files |
 | Phase 02-recommendation-engine P02 | 26min | 1 tasks | 2 files |
+| Phase 03-full-stack-core P02 | 8min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -76,6 +77,10 @@ Recent decisions affecting current work:
 - [Phase 02-recommendation-engine P01]: SkillSignals/KickerSignals/DSTSignals are separate frozen dataclasses; engine.py has zero SQLAlchemy imports enforced
 - [Phase 02-recommendation-engine]: PPR modifier applied as additive delta (not renormalized) to guarantee WR/TE PPR score > STANDARD when matchup sub-score dominates
 - [Phase 02-recommendation-engine]: usage_sub blends snap_pct (0.4) + usage_share (0.6) for WR/TE/RB; QB uses snap_pct only
+- [Phase 03-full-stack-core]: Tailwind v4 CSS-first config with @theme directive in globals.css — no tailwind.config.ts file
+- [Phase 03-full-stack-core]: SearchBar embedded in root layout so it persists across all routes without remounting
+- [Phase 03-full-stack-core]: FastAPI get_db dependency injection allows test override via app.dependency_overrides — StaticPool required for in-memory SQLite cross-thread isolation with TestClient
+- [Phase 03-full-stack-core]: injury_status=player.injury_status or None converts Sleeper empty string back to None before engine (Pitfall 4); fetch_projected_points returns {} on any exception
 
 ### Pending Todos
 
@@ -88,6 +93,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-25T19:01:31.053Z
-Stopped at: Phase 3 context gathered
-Resume file: .planning/phases/03-full-stack-core/03-CONTEXT.md
+Last session: 2026-03-27T14:22:53.561Z
+Stopped at: Completed 03-full-stack-core/03-01-PLAN.md
+Resume file: None

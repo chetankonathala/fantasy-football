@@ -7,16 +7,16 @@
 
 ### Search
 
-- [ ] **SRCH-01**: User can search for any NFL player by name and see autocomplete suggestions
-- [ ] **SRCH-02**: User can select a player from search results and view their recommendation page
+- [x] **SRCH-01**: User can search for any NFL player by name and see autocomplete suggestions
+- [x] **SRCH-02**: User can select a player from search results and view their recommendation page
 
 ### Recommendation
 
 - [x] **RECD-01**: User can see a clear START / SIT / FLEX verdict for any player for the current week
 - [x] **RECD-02**: Each recommendation includes a structured reasoning narrative (3-5 plain-English factors behind the call)
 - [x] **RECD-03**: User can see the matchup grade (opponent rank vs. position, based on DVP — points allowed to position)
-- [ ] **RECD-04**: User can see the player's injury / practice status (Q/D/Out) on the recommendation page
-- [ ] **RECD-05**: User can see usage trends for the player over the last 3-4 weeks (snap %, target share for WR/TE, carry share for RB)
+- [x] **RECD-04**: User can see the player's injury / practice status (Q/D/Out) on the recommendation page
+- [x] **RECD-05**: User can see usage trends for the player over the last 3-4 weeks (snap %, target share for WR/TE, carry share for RB)
 - [x] **RECD-06**: User can see projected fantasy points for the player for the current week
 - [x] **RECD-07**: User can select scoring format (PPR / half-PPR / standard) and have recommendation update accordingly
 - [x] **RECD-08**: Low-confidence recommendations (fewer than 4 games of data) are visibly flagged to the user
@@ -30,7 +30,7 @@
 ### Data Freshness
 
 - [x] **DATA-01**: Injury / practice status refreshes automatically throughout the week (not just once on Monday)
-- [ ] **DATA-02**: Each recommendation card shows a data freshness timestamp so user knows how current the data is
+- [x] **DATA-02**: Each recommendation card shows a data freshness timestamp so user knows how current the data is
 - [x] **DATA-03**: App shows a clear "season not active" state during the NFL off-season rather than stale data
 
 ### Comparison & Enrichment
@@ -86,11 +86,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | POS-01 | Phase 2 | Complete |
 | POS-02 | Phase 2 | Complete |
 | POS-03 | Phase 2 | Complete |
-| SRCH-01 | Phase 3 | Pending |
-| SRCH-02 | Phase 3 | Pending |
-| RECD-04 | Phase 3 | Pending |
-| RECD-05 | Phase 3 | Pending |
-| DATA-02 | Phase 3 | Pending |
+| SRCH-01 | Phase 3 | Complete |
+| SRCH-02 | Phase 3 | Complete |
+| RECD-04 | Phase 3 | Complete |
+| RECD-05 | Phase 3 | Complete |
+| DATA-02 | Phase 3 | Complete |
 | COMP-01 | Phase 4 | Pending |
 | ENRI-01 | Phase 4 | Pending |
 | ENRI-02 | Phase 4 | Pending |
