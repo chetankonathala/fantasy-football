@@ -24,39 +24,46 @@ def upsert_players(session: Session, player_dicts: list[dict]) -> int:
     if not player_dicts:
         return 0
 
-    stmt = insert(Player).values(player_dicts)
-    stmt = stmt.on_conflict_do_update(
-        index_elements=["nflverse_id"],
-        set_={
-            "sleeper_id": stmt.excluded.sleeper_id,
-            "full_name": stmt.excluded.full_name,
-            "first_name": stmt.excluded.first_name,
-            "last_name": stmt.excluded.last_name,
-            "position": stmt.excluded.position,
-            "team": stmt.excluded.team,
-            "injury_status": stmt.excluded.injury_status,
-            "practice_participation": stmt.excluded.practice_participation,
-            "status": stmt.excluded.status,
-            "injury_start_date": stmt.excluded.injury_start_date,
-            "week1_snap_pct": stmt.excluded.week1_snap_pct,
-            "week2_snap_pct": stmt.excluded.week2_snap_pct,
-            "week3_snap_pct": stmt.excluded.week3_snap_pct,
-            "week4_snap_pct": stmt.excluded.week4_snap_pct,
-            "week1_target_share": stmt.excluded.week1_target_share,
-            "week2_target_share": stmt.excluded.week2_target_share,
-            "week3_target_share": stmt.excluded.week3_target_share,
-            "week4_target_share": stmt.excluded.week4_target_share,
-            "week1_carry_share": stmt.excluded.week1_carry_share,
-            "week2_carry_share": stmt.excluded.week2_carry_share,
-            "week3_carry_share": stmt.excluded.week3_carry_share,
-            "week4_carry_share": stmt.excluded.week4_carry_share,
-            "matchup_id": stmt.excluded.matchup_id,
-            "updated_at": stmt.excluded.updated_at,
-        },
-    )
-    result = session.execute(stmt)
+    # SQLite has a 999-variable limit per statement. Player has 24 columns,
+    # so batch at 41 rows (41 * 24 = 984 variables).
+    BATCH_SIZE = 41
+    total = 0
+    for i in range(0, len(player_dicts), BATCH_SIZE):
+        batch = player_dicts[i : i + BATCH_SIZE]
+        stmt = insert(Player).values(batch)
+        stmt = stmt.on_conflict_do_update(
+            index_elements=["nflverse_id"],
+            set_={
+                "sleeper_id": stmt.excluded.sleeper_id,
+                "full_name": stmt.excluded.full_name,
+                "first_name": stmt.excluded.first_name,
+                "last_name": stmt.excluded.last_name,
+                "position": stmt.excluded.position,
+                "team": stmt.excluded.team,
+                "injury_status": stmt.excluded.injury_status,
+                "practice_participation": stmt.excluded.practice_participation,
+                "status": stmt.excluded.status,
+                "injury_start_date": stmt.excluded.injury_start_date,
+                "week1_snap_pct": stmt.excluded.week1_snap_pct,
+                "week2_snap_pct": stmt.excluded.week2_snap_pct,
+                "week3_snap_pct": stmt.excluded.week3_snap_pct,
+                "week4_snap_pct": stmt.excluded.week4_snap_pct,
+                "week1_target_share": stmt.excluded.week1_target_share,
+                "week2_target_share": stmt.excluded.week2_target_share,
+                "week3_target_share": stmt.excluded.week3_target_share,
+                "week4_target_share": stmt.excluded.week4_target_share,
+                "week1_carry_share": stmt.excluded.week1_carry_share,
+                "week2_carry_share": stmt.excluded.week2_carry_share,
+                "week3_carry_share": stmt.excluded.week3_carry_share,
+                "week4_carry_share": stmt.excluded.week4_carry_share,
+                "matchup_id": stmt.excluded.matchup_id,
+                "updated_at": stmt.excluded.updated_at,
+            },
+        )
+        result = session.execute(stmt)
+        total += result.rowcount
     session.commit()
-    return result.rowcount
+    return total
 
 
 def upsert_matchups(session: Session, matchup_dicts: list[dict]) -> int:
