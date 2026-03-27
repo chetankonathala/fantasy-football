@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 03-full-stack-core/03-01-PLAN.md
-last_updated: "2026-03-27T14:22:53.563Z"
+stopped_at: Completed 03-full-stack-core/03-03-PLAN.md
+last_updated: "2026-03-27T14:26:34.722Z"
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 9
-  completed_plans: 7
+  completed_plans: 8
 ---
 
 # Project State
@@ -55,6 +55,7 @@ Plan: 1 of 4
 | Phase 02-recommendation-engine P01 | 2min | 2 tasks | 2 files |
 | Phase 02-recommendation-engine P02 | 26min | 1 tasks | 2 files |
 | Phase 03-full-stack-core P02 | 8min | 2 tasks | 7 files |
+| Phase 03-full-stack-core P03 | 8min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -81,6 +82,10 @@ Recent decisions affecting current work:
 - [Phase 03-full-stack-core]: SearchBar embedded in root layout so it persists across all routes without remounting
 - [Phase 03-full-stack-core]: FastAPI get_db dependency injection allows test override via app.dependency_overrides — StaticPool required for in-memory SQLite cross-thread isolation with TestClient
 - [Phase 03-full-stack-core]: injury_status=player.injury_status or None converts Sleeper empty string back to None before engine (Pitfall 4); fetch_projected_points returns {} on any exception
+- [Phase 03-full-stack-core]: FreshnessStamp uses use client because Date.now() must run at render time in browser
+- [Phase 03-full-stack-core]: isFirstRender useRef guard skips format-switch fetch on mount since server already provides ppr data via initialData
+- [Phase 03-full-stack-core]: InjuryBadge defaults to Active styling when injury_status is null or empty string
+- [Phase 03-full-stack-core]: Target Share vs Carry Share row is position-gated: WR/TE show target share, RB shows carry share, QB shows neither
 
 ### Pending Todos
 
@@ -93,6 +98,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-27T14:22:53.561Z
-Stopped at: Completed 03-full-stack-core/03-01-PLAN.md
+Last session: 2026-03-27T14:26:34.720Z
+Stopped at: Completed 03-full-stack-core/03-03-PLAN.md
 Resume file: None
