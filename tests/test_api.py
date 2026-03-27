@@ -5,33 +5,25 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 
 from src.fantasy.db.base import Base
 from src.fantasy.db.models import Matchup, Player
 
 
 @pytest.fixture
-def db_engine():
-    engine = create_engine("sqlite:///:memory:", echo=False)
-    Base.metadata.create_all(engine)
-    yield engine
-    engine.dispose()
-
-
-@pytest.fixture
-def db_session(db_engine):
-    Session = sessionmaker(bind=db_engine)
-    session = Session()
-    yield session
-    session.close()
-
-
-@pytest.fixture
-def client(db_engine):
-    """TestClient with dependency override to use in-memory test DB."""
+def client():
+    """TestClient with dependency override to use in-memory test DB (shared via StaticPool)."""
     from main import app, get_db
 
-    TestingSession = sessionmaker(bind=db_engine)
+    engine = create_engine(
+        "sqlite:///:memory:",
+        echo=False,
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    Base.metadata.create_all(engine)
+    TestingSession = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 
     def override_get_db():
         db = TestingSession()
@@ -42,8 +34,11 @@ def client(db_engine):
 
     app.dependency_overrides[get_db] = override_get_db
     with TestClient(app) as c:
-        yield c, TestingSession()
+        session = TestingSession()
+        yield c, session
+        session.close()
     app.dependency_overrides.clear()
+    engine.dispose()
 
 
 def make_player(nflverse_id, full_name, position, team, **kwargs):

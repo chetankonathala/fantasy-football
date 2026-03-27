@@ -1,0 +1,151 @@
+"""FastAPI application — /search and /player/{id} routes for fantasy football recommendations."""
+from fastapi import Depends, FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
+
+from src.fantasy.db.base import get_session_factory
+from src.fantasy.db.models import Matchup, Player
+from src.fantasy.engine import (
+    DSTSignals,
+    KickerSignals,
+    Recommendation,
+    ScoringFormat,
+    SkillSignals,
+    score_player,
+)
+
+app = FastAPI(title="Fantasy Football API", version="1.0.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_methods=["GET"],
+    allow_headers=["*"],
+)
+
+SessionLocal = get_session_factory()
+
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+# ---------------------------------------------------------------------------
+# Routes
+# ---------------------------------------------------------------------------
+
+
+@app.get("/search")
+def search_players(q: str, db: Session = Depends(get_db)):
+    """Search players by name (case-insensitive substring match). Minimum 2 chars."""
+    if len(q) < 2:
+        return []
+    players = db.query(Player).filter(Player.full_name.ilike(f"%{q}%")).limit(5).all()
+    return [
+        {
+            "id": p.id,
+            "full_name": p.full_name,
+            "position": p.position,
+            "team": p.team,
+        }
+        for p in players
+    ]
+
+
+@app.get("/player/{player_id}")
+def get_player_recommendation(
+    player_id: int,
+    format: str = "ppr",
+    db: Session = Depends(get_db),
+):
+    """Return a start/sit recommendation for a player with supporting signals."""
+    player = db.query(Player).filter(Player.id == player_id).first()
+    if player is None:
+        raise HTTPException(status_code=404, detail="Player not found")
+
+    # Fetch matchup if linked
+    matchup = None
+    if player.matchup_id is not None:
+        matchup = db.query(Matchup).filter(Matchup.id == player.matchup_id).first()
+
+    matchup_rank = matchup.opponent_rank if matchup else None
+
+    # Build signals based on position
+    position = player.position or ""
+    scoring_fmt = ScoringFormat(format)
+
+    if position in ("QB", "RB", "WR", "TE"):
+        snap_pct_l4w = [
+            player.week1_snap_pct,
+            player.week2_snap_pct,
+            player.week3_snap_pct,
+            player.week4_snap_pct,
+        ]
+        if position in ("WR", "TE"):
+            usage_share_l4w = [
+                player.week1_target_share,
+                player.week2_target_share,
+                player.week3_target_share,
+                player.week4_target_share,
+            ]
+        elif position == "RB":
+            usage_share_l4w = [
+                player.week1_carry_share,
+                player.week2_carry_share,
+                player.week3_carry_share,
+                player.week4_carry_share,
+            ]
+        else:  # QB
+            usage_share_l4w = [None, None, None, None]
+
+        signals = SkillSignals(
+            position=position,
+            matchup_rank=matchup_rank,
+            injury_status=player.injury_status or None,
+            snap_pct_l4w=snap_pct_l4w,
+            usage_share_l4w=usage_share_l4w,
+            projected_points=None,
+        )
+    elif position == "K":
+        signals = KickerSignals(matchup_rank=matchup_rank)
+    else:
+        # DST or unknown
+        signals = DSTSignals(opponent_offense_rank=matchup_rank)
+
+    rec: Recommendation = score_player(signals, scoring_fmt)
+
+    return {
+        "verdict": rec.verdict.value,
+        "score": rec.score,
+        "reasons": rec.reasons,
+        "low_confidence": rec.low_confidence,
+        "scoring_format": rec.scoring_format.value,
+        "full_name": player.full_name,
+        "position": player.position,
+        "team": player.team,
+        "injury_status": player.injury_status,
+        "practice_participation": player.practice_participation,
+        "snap_pct_l4w": [
+            player.week1_snap_pct,
+            player.week2_snap_pct,
+            player.week3_snap_pct,
+            player.week4_snap_pct,
+        ],
+        "target_share_l4w": [
+            player.week1_target_share,
+            player.week2_target_share,
+            player.week3_target_share,
+            player.week4_target_share,
+        ],
+        "carry_share_l4w": [
+            player.week1_carry_share,
+            player.week2_carry_share,
+            player.week3_carry_share,
+            player.week4_carry_share,
+        ],
+        "updated_at": player.updated_at.isoformat() if player.updated_at is not None else None,
+    }
