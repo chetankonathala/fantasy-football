@@ -1,5 +1,6 @@
 """Tests for Sleeper API fetch and injury field extraction."""
 import pytest
+from unittest.mock import patch
 
 from src.fantasy.fetch.sleeper import extract_player_data, fetch_sleeper_players
 from src.fantasy.db.models import Player
@@ -99,3 +100,14 @@ def test_player_upsert(db_session):
     assert row.sleeper_id == "123"
     assert row.position == "QB"
     assert row.team == "KC"
+
+
+def test_fetch_projected_points_fallback():
+    """When requests.get raises HTTPError, fetch_projected_points returns empty dict."""
+    import requests
+    from src.fantasy.fetch.sleeper import fetch_projected_points
+
+    with patch("requests.get") as mock_get:
+        mock_get.side_effect = requests.exceptions.HTTPError("500 Server Error")
+        result = fetch_projected_points(2025, 1)
+    assert result == {}
