@@ -11,7 +11,12 @@ interface PlayerResult {
   team: string;
 }
 
-export function SearchBar() {
+interface SearchBarProps {
+  placeholder?: string;
+  size?: "sm" | "lg";
+}
+
+export function SearchBar({ placeholder = "Search players...", size = "sm" }: SearchBarProps) {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [debouncedQuery] = useDebounce(query, 300);
@@ -92,13 +97,13 @@ export function SearchBar() {
           }}
           onKeyDown={handleKeyDown}
           onFocus={() => results.length > 0 && setIsOpen(true)}
-          placeholder="Search players..."
+          placeholder={placeholder}
           aria-label="Search players"
           role="combobox"
           aria-expanded={isOpen}
           aria-controls="search-listbox"
           aria-autocomplete="list"
-          className="w-full bg-[#111827] border border-[#A5ACAF] rounded-md px-4 py-2 text-white placeholder-[#A5ACAF] focus:border-[#004C54] focus:border-2 focus:outline-none"
+          className={`w-full bg-[#111827] border border-[#A5ACAF] rounded-md px-4 text-white placeholder-[#A5ACAF] focus:border-[#004C54] focus:border-2 focus:outline-none ${size === "lg" ? "py-3 text-base" : "py-2 text-sm"}`}
         />
         {isLoading && (
           <div className="absolute right-3 top-1/2 -translate-y-1/2">

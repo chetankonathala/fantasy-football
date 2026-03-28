@@ -45,11 +45,17 @@ def normalize_players(
     """
     # Build lookup: sleeper_id -> gsis_id from crosswalk
     id_lookup: dict[str, str] = {}
+    # Build lookup: pfr_id -> gsis_id (used to join snap counts, which key on pfr_player_id)
+    pfr_to_gsis: dict[str, str] = {}
     if not crosswalk_df.is_empty():
         crosswalk_rows = crosswalk_df.select(["gsis_id", "sleeper_id"]).drop_nulls().to_dicts()
         for row in crosswalk_rows:
             if row["sleeper_id"]:
                 id_lookup[str(row["sleeper_id"])] = str(row["gsis_id"])
+        if "pfr_id" in crosswalk_df.columns:
+            pfr_rows = crosswalk_df.select(["gsis_id", "pfr_id"]).drop_nulls().to_dicts()
+            for row in pfr_rows:
+                pfr_to_gsis[str(row["pfr_id"])] = str(row["gsis_id"])
 
     # Compute carry shares for all players
     carry_shares_df = compute_carry_share(stats_df) if not stats_df.is_empty() else pl.DataFrame({
@@ -59,15 +65,18 @@ def normalize_players(
     })
 
     # Build stats lookups: gsis_id -> {week: value}
-    # snap_pct from snaps_df (column: offense_pct, joined on player_id)
+    # snap_pct from snaps_df — snap counts key on pfr_player_id, not gsis_id.
+    # Bridge via pfr_to_gsis crosswalk lookup.
     snap_lookup: dict[str, dict[int, float]] = {}
-    if not snaps_df.is_empty() and "player_id" in snaps_df.columns and "offense_pct" in snaps_df.columns:
-        for row in snaps_df.select(["player_id", "week", "offense_pct"]).to_dicts():
-            pid = str(row["player_id"])
-            if pid not in snap_lookup:
-                snap_lookup[pid] = {}
+    if not snaps_df.is_empty() and "pfr_player_id" in snaps_df.columns and "offense_pct" in snaps_df.columns:
+        for row in snaps_df.select(["pfr_player_id", "week", "offense_pct"]).to_dicts():
+            gsis_id = pfr_to_gsis.get(str(row["pfr_player_id"]))
+            if gsis_id is None:
+                continue
+            if gsis_id not in snap_lookup:
+                snap_lookup[gsis_id] = {}
             if row["offense_pct"] is not None:
-                snap_lookup[pid][int(row["week"])] = float(row["offense_pct"])
+                snap_lookup[gsis_id][int(row["week"])] = float(row["offense_pct"])
 
     # target_share from stats_df (column: target_share)
     target_lookup: dict[str, dict[int, float]] = {}
@@ -89,8 +98,12 @@ def normalize_players(
             if row["carry_share"] is not None:
                 carry_lookup[pid][int(row["week"])] = float(row["carry_share"])
 
-    # The 4 most recent weeks, ordered from most recent (week1) to oldest (week4)
-    week_slots = [current_week - 1, current_week - 2, current_week - 3, current_week - 4]
+    # Cap to regular season weeks (1-18). Playoff weeks (19-22) only have data for
+    # a handful of teams, leaving most players with null stats. Capping at week 18
+    # ensures we always pull the last 4 regular-season weeks.
+    REGULAR_SEASON_END = 18
+    effective_week = min(current_week, REGULAR_SEASON_END + 1)
+    week_slots = [effective_week - 1, effective_week - 2, effective_week - 3, effective_week - 4]
 
     now = datetime.now(timezone.utc)
     results: list[dict] = []
