@@ -16,6 +16,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: Recommendation Engine** - Pure scoring function that converts signals into a verified START/SIT/FLEX verdict with structured reasoning (completed 2026-03-25)
 - [x] **Phase 3: Full-Stack Core** - API routes, player search, and complete recommendation UI wired end-to-end (completed 2026-03-30)
 - [ ] **Phase 4: Reliability & Enhancement** - Scheduled refresh automation, player comparison, Vegas overlay, and weather signals
+- [ ] **Phase 5: Dynasty Trade Analyzer** - Full trade package builder with dynasty/keeper values, win/lose/fair verdict, and pick capital valuation
+- [ ] **Phase 6: Dynasty Draft Room** - Full dynasty rankings, rookie grades, keeper analysis, and live snake-draft board
 
 ## Phase Details
 
@@ -76,10 +78,34 @@ Plans:
   3. Outdoor games with meaningful weather (wind or precipitation) show a weather flag on the recommendation card as a pass-game suppression signal
 **Plans**: TBD
 
+### Phase 5: Dynasty Trade Analyzer
+**Goal**: A dynasty/keeper player can build full trade packages on both sides, get a win/lose/fair verdict with plain-English reasoning, and evaluate pick capital alongside player value
+**Depends on**: Phase 4
+**Requirements**: TRAD-01, TRAD-02, TRAD-03, TRAD-04, TRAD-05
+**Success Criteria** (what must be TRUE):
+  1. User can build a trade package by adding/removing multiple players and draft picks (with round + year) on each side
+  2. Trade analyzer returns a win/lose/fair verdict with per-player and per-pick reasoning explaining who gains positional value, age-curve advantage, and pick capital
+  3. Dynasty mode pulls live trade values from KeepTradeCut for all players and picks
+  4. Keeper mode shows each player's keeper acquisition cost vs. dynasty value so the net gain/loss of a trade is clear
+  5. Pick values use the KTC pick value chart with year and round (e.g., "2026 1st" scores higher than "2028 1st")
+**Plans**: TBD
+
+### Phase 6: Dynasty Draft Room
+**Goal**: A dynasty/keeper player can review full dynasty and rookie rankings pre-draft, see keep/cut recommendations for their roster, and run a live snake draft board during their actual draft
+**Depends on**: Phase 5
+**Requirements**: DRFT-01, DRFT-02, DRFT-03, DRFT-04, DRFT-05
+**Success Criteria** (what must be TRUE):
+  1. Full dynasty rankings board displays all relevant players ranked by long-term value with age-curve grade and position tier label
+  2. Rookie rankings tab shows incoming class with positional grade, landing spot assessment, and dynasty ceiling/floor rating
+  3. Keeper analysis page shows each player with their keeper cost and dynasty value side-by-side, with a keep/cut recommendation
+  4. Live draft board allows marking players as drafted in real-time, queuing targets, and tracking own picks across all rounds
+  5. Draft board supports configurable snake format (8–14 teams) with round-by-round pick order computed automatically
+**Plans**: TBD
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -87,3 +113,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | 2. Recommendation Engine | 2/2 | Complete    | 2026-03-25 |
 | 3. Full-Stack Core | 4/4 | Complete   | 2026-03-30 |
 | 4. Reliability & Enhancement | 0/TBD | Not started | - |
+| 5. Dynasty Trade Analyzer | 0/TBD | Not started | - |
+| 6. Dynasty Draft Room | 0/TBD | Not started | - |

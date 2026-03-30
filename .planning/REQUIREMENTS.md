@@ -39,6 +39,22 @@
 - [ ] **ENRI-01**: User can see a Vegas implied team total overlay alongside the recommendation
 - [ ] **ENRI-02**: User can see a weather flag for outdoor games (pass game suppression signal)
 
+### Trade Analyzer
+
+- [ ] **TRAD-01**: User can build a full trade package — add/remove multiple players and draft picks on each side
+- [ ] **TRAD-02**: Trade analyzer returns a win/lose/fair verdict with per-player reasoning (who gains positional value, age curve, pick capital)
+- [ ] **TRAD-03**: Dynasty mode values players by long-term dynasty trade value (sourced from KeepTradeCut)
+- [ ] **TRAD-04**: Keeper mode factors in each player's keeper acquisition cost against their dynasty value to show net gain/loss
+- [ ] **TRAD-05**: Draft pick values are included in trade packages (1st/2nd round, year — valued by KTC pick value chart)
+
+### Dynasty Draft
+
+- [ ] **DRFT-01**: Full dynasty rankings board showing all relevant players ranked by long-term value, with age-curve grade and position tier
+- [ ] **DRFT-02**: Rookie-specific rankings tier with positional grade, landing spot assessment, and dynasty ceiling/floor
+- [ ] **DRFT-03**: Keeper analysis page: for each rostered player, show keeper cost vs. dynasty value and a keep/cut recommendation
+- [ ] **DRFT-04**: Live draft board: mark players as drafted in real-time, track own picks, queue targets for upcoming rounds
+- [ ] **DRFT-05**: Draft board supports snake draft format with configurable league size (8–14 teams)
+
 ## v2 Requirements
 
 ### Historical Tracking
@@ -62,7 +78,6 @@
 |---------|--------|
 | League management (standings, transactions) | ESPN already handles this; not analytics |
 | DFS lineup optimization | Different product surface and data problem |
-| Trade analyzer | Requires dynasty/ROS values — separate product |
 | Waiver wire recommendations | Requires roster context and FAAB strategy |
 | AI chatbot / natural language interface | Structured reasoning narrative achieves the same goal without LLM overhead |
 | Social / community features | Changes product type entirely |
@@ -94,10 +109,20 @@ Which phases cover which requirements. Updated during roadmap creation.
 | COMP-01 | Phase 4 | Pending |
 | ENRI-01 | Phase 4 | Pending |
 | ENRI-02 | Phase 4 | Pending |
+| TRAD-01 | Phase 5 | Pending |
+| TRAD-02 | Phase 5 | Pending |
+| TRAD-03 | Phase 5 | Pending |
+| TRAD-04 | Phase 5 | Pending |
+| TRAD-05 | Phase 5 | Pending |
+| DRFT-01 | Phase 6 | Pending |
+| DRFT-02 | Phase 6 | Pending |
+| DRFT-03 | Phase 6 | Pending |
+| DRFT-04 | Phase 6 | Pending |
+| DRFT-05 | Phase 6 | Pending |
 
 **Coverage:**
-- v1 requirements: 19 total
-- Mapped to phases: 19
+- v1 requirements: 29 total
+- Mapped to phases: 29
 - Unmapped: 0 ✓
 
 ---
