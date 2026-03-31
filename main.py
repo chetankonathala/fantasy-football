@@ -1,4 +1,4 @@
-"""FastAPI application — /search and /player/{id} routes for fantasy football recommendations."""
+"""FastAPI application — /search, /player/{id}, and /compare routes for fantasy football recommendations."""
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
@@ -35,34 +35,12 @@ def get_db():
 
 
 # ---------------------------------------------------------------------------
-# Routes
+# Private helpers
 # ---------------------------------------------------------------------------
 
 
-@app.get("/search")
-def search_players(q: str, db: Session = Depends(get_db)):
-    """Search players by name (case-insensitive substring match). Minimum 2 chars."""
-    if len(q) < 2:
-        return []
-    players = db.query(Player).filter(Player.full_name.ilike(f"%{q}%")).limit(5).all()
-    return [
-        {
-            "id": p.id,
-            "full_name": p.full_name,
-            "position": p.position,
-            "team": p.team,
-        }
-        for p in players
-    ]
-
-
-@app.get("/player/{player_id}")
-def get_player_recommendation(
-    player_id: int,
-    format: str = "ppr",
-    db: Session = Depends(get_db),
-):
-    """Return a start/sit recommendation for a player with supporting signals."""
+def _build_recommendation(player_id: int, format: str, db: Session) -> dict:
+    """Build recommendation payload for a single player. Raises HTTPException(404) if not found."""
     player = db.query(Player).filter(Player.id == player_id).first()
     if player is None:
         raise HTTPException(status_code=404, detail="Player not found")
@@ -149,3 +127,53 @@ def get_player_recommendation(
         ],
         "updated_at": player.updated_at.isoformat() if player.updated_at is not None else None,
     }
+
+
+# ---------------------------------------------------------------------------
+# Routes
+# ---------------------------------------------------------------------------
+
+
+@app.get("/search")
+def search_players(q: str, db: Session = Depends(get_db)):
+    """Search players by name (case-insensitive substring match). Minimum 2 chars."""
+    if len(q) < 2:
+        return []
+    players = db.query(Player).filter(Player.full_name.ilike(f"%{q}%")).limit(5).all()
+    return [
+        {
+            "id": p.id,
+            "full_name": p.full_name,
+            "position": p.position,
+            "team": p.team,
+        }
+        for p in players
+    ]
+
+
+@app.get("/player/{player_id}")
+def get_player_recommendation(
+    player_id: int,
+    format: str = "ppr",
+    db: Session = Depends(get_db),
+):
+    """Return a start/sit recommendation for a player with supporting signals."""
+    return _build_recommendation(player_id, format, db)
+
+
+@app.get("/compare")
+def compare_players(a: int, b: int, format: str = "ppr", db: Session = Depends(get_db)):
+    """Return side-by-side recommendations for two players."""
+    # Validate both exist before building either (no partial comparisons)
+    player_a = db.query(Player).filter(Player.id == a).first()
+    player_b = db.query(Player).filter(Player.id == b).first()
+    if player_a is None or player_b is None:
+        missing = []
+        if player_a is None:
+            missing.append(str(a))
+        if player_b is None:
+            missing.append(str(b))
+        raise HTTPException(status_code=404, detail=f"Player(s) not found: {', '.join(missing)}")
+    rec_a = _build_recommendation(a, format, db)
+    rec_b = _build_recommendation(b, format, db)
+    return {"player_a": rec_a, "player_b": rec_b}
