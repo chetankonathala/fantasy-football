@@ -6,7 +6,7 @@ Never does a full-wipe; always upserts by canonical ID.
 from sqlalchemy.dialects.sqlite import insert
 from sqlalchemy.orm import Session
 
-from src.fantasy.db.models import Matchup, Player
+from src.fantasy.db.models import GameLine, Matchup, Player
 
 
 def upsert_players(session: Session, player_dicts: list[dict]) -> int:
@@ -87,6 +87,42 @@ def upsert_matchups(session: Session, matchup_dicts: list[dict]) -> int:
         set_={
             "opponent_rank": stmt.excluded.opponent_rank,
             "dvp_score": stmt.excluded.dvp_score,
+        },
+    )
+    result = session.execute(stmt)
+    session.commit()
+    return result.rowcount
+
+
+def upsert_game_lines(session: Session, game_line_dicts: list[dict]) -> int:
+    """Upsert a list of game line records by (week, home_team, away_team).
+
+    Inserts new game lines; updates all mutable fields when key already exists.
+
+    Args:
+        session: SQLAlchemy session
+        game_line_dicts: list of dicts with game line field values
+
+    Returns:
+        Number of rows affected (0 for empty input).
+    """
+    if not game_line_dicts:
+        return 0
+
+    stmt = insert(GameLine).values(game_line_dicts)
+    stmt = stmt.on_conflict_do_update(
+        index_elements=["week", "home_team", "away_team"],
+        set_={
+            "game_total": stmt.excluded.game_total,
+            "home_spread": stmt.excluded.home_spread,
+            "home_implied_total": stmt.excluded.home_implied_total,
+            "away_implied_total": stmt.excluded.away_implied_total,
+            "is_dome": stmt.excluded.is_dome,
+            "wind_mph": stmt.excluded.wind_mph,
+            "precip_probability": stmt.excluded.precip_probability,
+            "weather_flag": stmt.excluded.weather_flag,
+            "game_date": stmt.excluded.game_date,
+            "updated_at": stmt.excluded.updated_at,
         },
     )
     result = session.execute(stmt)

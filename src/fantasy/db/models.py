@@ -1,7 +1,8 @@
-"""SQLAlchemy ORM models for Player and Matchup tables."""
+"""SQLAlchemy ORM models for Player, Matchup, and GameLine tables."""
 from datetime import datetime, timezone
 
 from sqlalchemy import (
+    Boolean,
     Column,
     DateTime,
     Float,
@@ -84,4 +85,34 @@ class Player(Base):
         nullable=False,
         default=lambda: datetime.now(timezone.utc),
         onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+
+class GameLine(Base):
+    """GameLine table: Vegas odds and weather context per game per week."""
+
+    __tablename__ = "game_line"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    week = Column(Integer, nullable=False)
+    home_team = Column(String(5), nullable=False)
+    away_team = Column(String(5), nullable=False)
+    game_total = Column(Float, nullable=True)          # over/under line
+    home_spread = Column(Float, nullable=True)         # home team spread (neg = favored)
+    home_implied_total = Column(Float, nullable=True)  # (total/2) - (spread/2)
+    away_implied_total = Column(Float, nullable=True)  # (total/2) + (spread/2)
+    is_dome = Column(Boolean, nullable=False, default=False)
+    wind_mph = Column(Float, nullable=True)
+    precip_probability = Column(Integer, nullable=True)  # 0-100
+    weather_flag = Column(Boolean, nullable=False, default=False)
+    game_date = Column(String(10), nullable=True)  # "YYYY-MM-DD" for weather lookup timing
+    updated_at = Column(
+        DateTime,
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    __table_args__ = (
+        UniqueConstraint("week", "home_team", "away_team", name="uq_gameline_week_home_away"),
     )
