@@ -211,3 +211,95 @@ def test_player_not_found(client):
     c, session = client
     resp = c.get("/player/999999")
     assert resp.status_code == 404
+
+
+# ---------------------------------------------------------------------------
+# /compare endpoint tests
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def compare_fixture(client):
+    """Two players: WR with matchup, RB without matchup."""
+    c, session = client
+    matchup = Matchup(week=1, team="MIN", position="WR", opponent_rank=5, dvp_score=45.0)
+    session.add(matchup)
+    session.flush()
+
+    player_a = make_player(
+        "nfl_cmp_01",
+        "Justin Jefferson",
+        "WR",
+        "MIN",
+        week1_snap_pct=0.85,
+        week2_snap_pct=0.80,
+        week3_snap_pct=0.75,
+        week4_snap_pct=0.82,
+        week1_target_share=0.28,
+        week2_target_share=0.25,
+        week3_target_share=0.22,
+        week4_target_share=0.30,
+        matchup_id=matchup.id,
+    )
+    player_b = make_player(
+        "nfl_cmp_02",
+        "Dalvin Cook",
+        "RB",
+        "MIN",
+        week1_snap_pct=0.60,
+        week2_snap_pct=0.55,
+        week3_snap_pct=0.65,
+        week4_snap_pct=0.58,
+        week1_carry_share=0.40,
+        week2_carry_share=0.38,
+        week3_carry_share=0.42,
+        week4_carry_share=0.35,
+    )
+    session.add(player_a)
+    session.add(player_b)
+    session.commit()
+    return c, session, player_a, player_b
+
+
+def test_compare_returns_both_players(compare_fixture):
+    """GET /compare?a=&b= returns 200 with player_a and player_b payloads."""
+    c, session, player_a, player_b = compare_fixture
+    resp = c.get(f"/compare?a={player_a.id}&b={player_b.id}")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "player_a" in data
+    assert "player_b" in data
+    for key in ("verdict", "full_name", "score", "reasons"):
+        assert key in data["player_a"], f"missing key '{key}' in player_a"
+        assert key in data["player_b"], f"missing key '{key}' in player_b"
+
+
+def test_compare_invalid_b_returns_404(compare_fixture):
+    """GET /compare?a={valid}&b={invalid} returns 404."""
+    c, session, player_a, player_b = compare_fixture
+    resp = c.get(f"/compare?a={player_a.id}&b=999999")
+    assert resp.status_code == 404
+
+
+def test_compare_invalid_a_returns_404(compare_fixture):
+    """GET /compare?a={invalid}&b={valid} returns 404."""
+    c, session, player_a, player_b = compare_fixture
+    resp = c.get(f"/compare?a=999999&b={player_b.id}")
+    assert resp.status_code == 404
+
+
+def test_compare_format_standard(compare_fixture):
+    """GET /compare?format=standard returns scoring_format='standard' for both players."""
+    c, session, player_a, player_b = compare_fixture
+    resp = c.get(f"/compare?a={player_a.id}&b={player_b.id}&format=standard")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["player_a"]["scoring_format"] == "standard"
+    assert data["player_b"]["scoring_format"] == "standard"
+
+
+def test_compare_both_invalid_returns_404(compare_fixture):
+    """GET /compare?a={invalid}&b={invalid} returns 404."""
+    c, session, player_a, player_b = compare_fixture
+    resp = c.get("/compare?a=999998&b=999999")
+    assert resp.status_code == 404
