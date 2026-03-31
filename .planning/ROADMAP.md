@@ -76,7 +76,11 @@ Plans:
   1. User can navigate to a comparison view, enter two players, and see their recommendation signals side-by-side (verdict, matchup grade, injury status, usage trend, projected points)
   2. The recommendation page shows a Vegas implied team total alongside the matchup grade so the user can factor game environment into the decision
   3. Outdoor games with meaningful weather (wind or precipitation) show a weather flag on the recommendation card as a pass-game suppression signal
-**Plans**: TBD
+**Plans:** 3 plans
+Plans:
+- [ ] 04-01-PLAN.md — GameLine model + migration, Odds API fetch, Open-Meteo weather fetch, refresh.py integration
+- [ ] 04-02-PLAN.md — Refactor _build_recommendation helper, add /compare endpoint with tests
+- [ ] 04-03-PLAN.md — Wire Vegas/weather into API responses, build comparison frontend page, visual verification
 
 ### Phase 5: Dynasty Trade Analyzer
 **Goal**: A dynasty/keeper player can build full trade packages on both sides, get a win/lose/fair verdict with plain-English reasoning, and evaluate pick capital alongside player value
@@ -99,7 +103,7 @@ Plans:
   2. Rookie rankings tab shows incoming class with positional grade, landing spot assessment, and dynasty ceiling/floor rating
   3. Keeper analysis page shows each player with their keeper cost and dynasty value side-by-side, with a keep/cut recommendation
   4. Live draft board allows marking players as drafted in real-time, queuing targets, and tracking own picks across all rounds
-  5. Draft board supports configurable snake format (8–14 teams) with round-by-round pick order computed automatically
+  5. Draft board supports configurable snake format (8-14 teams) with round-by-round pick order computed automatically
 **Plans**: TBD
 
 ## Progress
@@ -112,6 +116,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 1. Data Foundation | 3/3 | Complete    | 2026-03-22 |
 | 2. Recommendation Engine | 2/2 | Complete    | 2026-03-25 |
 | 3. Full-Stack Core | 4/4 | Complete   | 2026-03-30 |
-| 4. Reliability & Enhancement | 0/TBD | Not started | - |
+| 4. Reliability & Enhancement | 0/3 | Not started | - |
 | 5. Dynasty Trade Analyzer | 0/TBD | Not started | - |
 | 6. Dynasty Draft Room | 0/TBD | Not started | - |
