@@ -1,4 +1,6 @@
 """FastAPI application — /search, /player/{id}, and /compare routes for fantasy football recommendations."""
+import os
+
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
@@ -16,9 +18,13 @@ from src.fantasy.engine import (
 
 app = FastAPI(title="Fantasy Football API", version="1.0.0")
 
+_cors_origins = ["http://localhost:3000"]
+if os.environ.get("FRONTEND_URL"):
+    _cors_origins.append(os.environ["FRONTEND_URL"])
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=_cors_origins,
     allow_methods=["GET"],
     allow_headers=["*"],
 )

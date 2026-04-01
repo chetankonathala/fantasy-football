@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { FreshnessStamp } from "@/components/FreshnessStamp";
+import { API_BASE } from "@/lib/api";
 
 interface RecommendationResponse {
   verdict: "START" | "SIT" | "FLEX";
@@ -95,7 +96,7 @@ export function RecommendationCard({ playerId, initialData }: RecommendationCard
     }
 
     setIsLoading(true);
-    fetch(`http://localhost:8000/player/${playerId}?format=${format}`)
+    fetch(`${API_BASE}/player/${playerId}?format=${format}`)
       .then((res) => {
         if (!res.ok) throw new Error("fetch failed");
         return res.json();
@@ -240,13 +241,13 @@ export function RecommendationCard({ playerId, initialData }: RecommendationCard
           />
 
           {/* Vegas Implied Total (ENRI-01) */}
-          {rec.vegas_implied_total !== null && (
+          {rec.vegas_implied_total != null && (
             <SignalRow
               label="Implied Team Total"
               value={
                 <span>
                   {rec.vegas_implied_total.toFixed(1)} pts
-                  {rec.game_total !== null && (
+                  {rec.game_total != null && (
                     <span className="text-[#A5ACAF] text-sm ml-2">
                       (O/U {rec.game_total.toFixed(1)})
                     </span>

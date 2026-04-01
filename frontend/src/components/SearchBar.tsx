@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useDebounce } from "use-debounce";
+import { API_BASE } from "@/lib/api";
 
 interface PlayerResult {
   id: number;
@@ -34,7 +35,7 @@ export function SearchBar({ placeholder = "Search players...", size = "sm" }: Se
       return;
     }
     setIsLoading(true);
-    fetch(`http://localhost:8000/search?q=${encodeURIComponent(debouncedQuery)}`)
+    fetch(`${API_BASE}/search?q=${encodeURIComponent(debouncedQuery)}`)
       .then((r) => r.json())
       .then((data: PlayerResult[]) => {
         setResults(data);

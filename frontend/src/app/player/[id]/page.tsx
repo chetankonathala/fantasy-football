@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { RecommendationCard } from "@/components/RecommendationCard";
+import { API_BASE } from "@/lib/api";
 
 type PlayerPageProps = {
   params: Promise<{ id: string }>;
@@ -18,7 +19,7 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
   let data = null;
   let error = null;
   try {
-    const res = await fetch(`http://localhost:8000/player/${id}?format=ppr`, {
+    const res = await fetch(`${API_BASE}/player/${id}?format=ppr`, {
       cache: "no-store",
     });
     if (!res.ok) {

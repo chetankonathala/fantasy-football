@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { FreshnessStamp } from "@/components/FreshnessStamp";
+import { API_BASE } from "@/lib/api";
 
 interface PlayerResult {
   id: number;
@@ -110,7 +111,7 @@ function PlayerSearchInput({
       return;
     }
     timerRef.current = setTimeout(() => {
-      fetch(`http://localhost:8000/search?q=${encodeURIComponent(query)}`)
+      fetch(`${API_BASE}/search?q=${encodeURIComponent(query)}`)
         .then((r) => r.json())
         .then((data: PlayerResult[]) => {
           setResults(data);
@@ -250,13 +251,13 @@ function PlayerColumn({ rec }: { rec: PlayerRec }) {
           ) : ["WR", "TE"].includes(rec.position) ? (
             <SignalRow label="Target Share (L4W)" value={formatSparkRow(rec.target_share_l4w, true)} />
           ) : null}
-          {rec.vegas_implied_total !== null && (
+          {rec.vegas_implied_total != null && (
             <SignalRow
               label="Implied Team Total"
               value={
                 <span>
                   {rec.vegas_implied_total.toFixed(1)} pts
-                  {rec.game_total !== null && (
+                  {rec.game_total != null && (
                     <span className="text-[#A5ACAF] text-sm ml-2">
                       (O/U {rec.game_total.toFixed(1)})
                     </span>
@@ -312,7 +313,7 @@ export function CompareView() {
     }
     setIsLoading(true);
     setError(null);
-    fetch(`http://localhost:8000/compare?a=${playerA}&b=${playerB}&format=${format}`)
+    fetch(`${API_BASE}/compare?a=${playerA}&b=${playerB}&format=${format}`)
       .then((res) => {
         if (!res.ok) throw new Error("fetch failed");
         return res.json();

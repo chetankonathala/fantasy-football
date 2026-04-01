@@ -1,11 +1,12 @@
 """SQLAlchemy engine, Base, and session factory."""
+import os
 from pathlib import Path
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
-DB_PATH = PROJECT_ROOT / "data" / "fantasy.db"
+DB_PATH = Path(os.environ.get("DATABASE_PATH", str(PROJECT_ROOT / "data" / "fantasy.db")))
 
 
 class Base(DeclarativeBase):
