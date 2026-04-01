@@ -25,6 +25,9 @@ export default function RootLayout({
           <Link href="/" className="text-sm font-bold text-white">
             Fantasy Advisor
           </Link>
+          <Link href="/compare" className="text-sm text-[#A5ACAF] hover:text-white transition-colors">
+            Compare
+          </Link>
           <div className="w-80">
             <SearchBar />
           </div>

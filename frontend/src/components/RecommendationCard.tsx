@@ -18,6 +18,12 @@ interface RecommendationResponse {
   full_name: string;
   position: string;
   team: string;
+  vegas_implied_total: number | null;
+  game_total: number | null;
+  weather_flag: boolean;
+  wind_mph: number | null;
+  precip_probability: number | null;
+  is_dome: boolean | null;
 }
 
 type Format = "ppr" | "half_ppr" | "standard";
@@ -232,8 +238,37 @@ export function RecommendationCard({ playerId, initialData }: RecommendationCard
             label="Projected Points"
             value={rec.score ? `${rec.score.toFixed(1)} pts` : "N/A"}
           />
+
+          {/* Vegas Implied Total (ENRI-01) */}
+          {rec.vegas_implied_total !== null && (
+            <SignalRow
+              label="Implied Team Total"
+              value={
+                <span>
+                  {rec.vegas_implied_total.toFixed(1)} pts
+                  {rec.game_total !== null && (
+                    <span className="text-[#A5ACAF] text-sm ml-2">
+                      (O/U {rec.game_total.toFixed(1)})
+                    </span>
+                  )}
+                </span>
+              }
+            />
+          )}
         </dl>
       </div>
+
+      {/* Weather Flag (ENRI-02) */}
+      {rec.weather_flag && (
+        <div className="flex items-center gap-2 px-3 py-2 rounded bg-[#1C1400] border border-[#F59E0B]/40 mt-2">
+          <span className="text-[#F59E0B] text-sm font-semibold">Weather Alert</span>
+          <span className="text-[#A5ACAF] text-sm">
+            {rec.wind_mph !== null && rec.wind_mph > 15 && `Wind ${Math.round(rec.wind_mph)} mph`}
+            {rec.wind_mph !== null && rec.wind_mph > 15 && rec.precip_probability !== null && rec.precip_probability > 30 && " · "}
+            {rec.precip_probability !== null && rec.precip_probability > 30 && `${rec.precip_probability}% precip`}
+          </span>
+        </div>
+      )}
 
       {/* FRESHNESS STAMP */}
       <FreshnessStamp updatedAt={rec.updated_at} />
