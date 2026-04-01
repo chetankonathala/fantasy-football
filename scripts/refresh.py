@@ -21,8 +21,10 @@ import nflreadpy as nfl
 from sqlalchemy.orm import Session  # noqa: F401 (imported for type reference)
 
 from src.fantasy.db.base import get_engine, get_session_factory
-from src.fantasy.db.upsert import upsert_players, upsert_matchups
+from src.fantasy.db.upsert import upsert_players, upsert_matchups, upsert_game_lines
 from src.fantasy.fetch.sleeper import fetch_sleeper_players
+from src.fantasy.fetch.odds import fetch_game_lines
+from src.fantasy.fetch.weather import fetch_weather
 from src.fantasy.fetch.nflverse import (
     load_ff_playerids,
     load_player_stats,
@@ -74,6 +76,7 @@ def main() -> dict:
         - season_active (bool): False if off-season early return
         - players_upserted (int): number of player rows upserted (0 if off-season)
         - matchups_upserted (int): number of matchup rows upserted (0 if off-season)
+        - game_lines_upserted (int): number of game line rows upserted (0 if off-season or non-Wed-Sat)
     """
     setup_logging()
 
@@ -81,7 +84,7 @@ def main() -> dict:
     week = nfl.get_current_week(use_date=True)
     if not (1 <= week <= 22):
         log.info("season_active=false week=%s — skipping refresh", week)
-        return {"season_active": False, "players_upserted": 0, "matchups_upserted": 0}
+        return {"season_active": False, "players_upserted": 0, "matchups_upserted": 0, "game_lines_upserted": 0}
 
     season = nfl.get_current_season()
     log.info("Starting refresh season=%s week=%s", season, week)
@@ -95,7 +98,7 @@ def main() -> dict:
         pbp_df = load_pbp(season)
     except Exception as exc:
         log.error("Fetch failed: %s — retaining last good data", exc)
-        return {"season_active": True, "players_upserted": 0, "matchups_upserted": 0}
+        return {"season_active": True, "players_upserted": 0, "matchups_upserted": 0, "game_lines_upserted": 0}
 
     # Normalize phase
     player_dicts = normalize_players(sleeper_players, stats_df, snaps_df, crosswalk_df, week)
@@ -109,11 +112,27 @@ def main() -> dict:
         players_count = upsert_players(session, player_dicts)
         matchups_count = upsert_matchups(session, matchup_dicts)
 
-    log.info("Refresh complete: %d players, %d matchups upserted", players_count, matchups_count)
+        # Game lines: Vegas odds + weather (ENRI-01, ENRI-02)
+        try:
+            game_line_dicts = fetch_game_lines(week)
+            if game_line_dicts:
+                game_line_dicts = fetch_weather(game_line_dicts)
+                game_lines_count = upsert_game_lines(session, game_line_dicts)
+            else:
+                game_lines_count = 0
+        except Exception as exc:
+            log.error("Game lines fetch/persist failed: %s — continuing", exc)
+            game_lines_count = 0
+
+    log.info(
+        "Refresh complete: %d players, %d matchups, %d game lines upserted",
+        players_count, matchups_count, game_lines_count,
+    )
     return {
         "season_active": True,
         "players_upserted": players_count,
         "matchups_upserted": matchups_count,
+        "game_lines_upserted": game_lines_count,
     }
 
 
