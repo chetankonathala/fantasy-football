@@ -76,7 +76,7 @@ Plans:
   1. User can navigate to a comparison view, enter two players, and see their recommendation signals side-by-side (verdict, matchup grade, injury status, usage trend, projected points)
   2. The recommendation page shows a Vegas implied team total alongside the matchup grade so the user can factor game environment into the decision
   3. Outdoor games with meaningful weather (wind or precipitation) show a weather flag on the recommendation card as a pass-game suppression signal
-**Plans:** 3 plans
+**Plans:** 1/3 plans executed
 Plans:
 - [ ] 04-01-PLAN.md — GameLine model + migration, Odds API fetch, Open-Meteo weather fetch, refresh.py integration
 - [ ] 04-02-PLAN.md — Refactor _build_recommendation helper, add /compare endpoint with tests
@@ -116,6 +116,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 1. Data Foundation | 3/3 | Complete    | 2026-03-22 |
 | 2. Recommendation Engine | 2/2 | Complete    | 2026-03-25 |
 | 3. Full-Stack Core | 4/4 | Complete   | 2026-03-30 |
-| 4. Reliability & Enhancement | 0/3 | Not started | - |
+| 4. Reliability & Enhancement | 1/3 | In Progress|  |
 | 5. Dynasty Trade Analyzer | 0/TBD | Not started | - |
 | 6. Dynasty Draft Room | 0/TBD | Not started | - |

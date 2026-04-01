@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 03-full-stack-core/03-04-PLAN.md
-last_updated: "2026-03-30T17:36:18Z"
+stopped_at: Completed 04-reliability-enhancement/04-01-PLAN.md
+last_updated: "2026-04-01T12:41:41.580Z"
 progress:
-  total_phases: 4
+  total_phases: 6
   completed_phases: 3
-  total_plans: 9
-  completed_plans: 9
+  total_plans: 12
+  completed_plans: 10
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-19)
 
 **Core value:** Give a clear start/sit recommendation with transparent reasoning (matchup grade, injury status, recent usage) so the user can stop second-guessing and win more weeks without spending hours on research.
-**Current focus:** Phase 03 — full-stack-core
+**Current focus:** Phase 04 — reliability-enhancement
 
 ## Current Position
 
-Phase: 03 (full-stack-core) — COMPLETE
-Plan: 4 of 4 (all complete)
+Phase: 04 (reliability-enhancement) — EXECUTING
+Plan: 1 of 3
 
 ## Performance Metrics
 
@@ -57,6 +57,7 @@ Plan: 4 of 4 (all complete)
 | Phase 03-full-stack-core P02 | 8min | 2 tasks | 7 files |
 | Phase 03-full-stack-core P03 | 8min | 2 tasks | 3 files |
 | Phase 03-full-stack-core P04 | 5min | 2 tasks | 0 files |
+| Phase 04-reliability-enhancement P01 | 54 | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -88,6 +89,9 @@ Recent decisions affecting current work:
 - [Phase 03-full-stack-core]: InjuryBadge defaults to Active styling when injury_status is null or empty string
 - [Phase 03-full-stack-core]: Target Share vs Carry Share row is position-gated: WR/TE show target share, RB shows carry share, QB shows neither
 - [Phase 03-full-stack-core P04]: End-to-end flow verified by human visual inspection: search autocomplete works, player detail page renders verdict/signals/format selector, freshness timestamp visible
+- [Phase 04-reliability-enhancement]: GameLine table is game-scoped (week/home_team/away_team), not position-scoped like Matchup — avoids duplicating game data 6x per team per week
+- [Phase 04-reliability-enhancement]: Day-of-week guard for Odds API inside fetch_game_lines() (Wed-Sat only) — quota protection co-located with API client, not in refresh.py
+- [Phase 04-reliability-enhancement]: DOME_TEAMS includes LAR and LAC (SoFi Stadium) — treated as dome for simplicity; wind events accepted as tolerable error rate
 
 ### Pending Todos
 
@@ -100,6 +104,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-30T17:36:18Z
-Stopped at: Completed 03-full-stack-core/03-04-PLAN.md
+Last session: 2026-04-01T12:41:41.578Z
+Stopped at: Completed 04-reliability-enhancement/04-01-PLAN.md
 Resume file: None
