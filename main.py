@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from src.fantasy.db.base import get_session_factory
-from src.fantasy.db.models import Matchup, Player
+from src.fantasy.db.models import GameLine, Matchup, Player
 from src.fantasy.engine import (
     DSTSignals,
     KickerSignals,
@@ -51,6 +51,23 @@ def _build_recommendation(player_id: int, format: str, db: Session) -> dict:
         matchup = db.query(Matchup).filter(Matchup.id == player.matchup_id).first()
 
     matchup_rank = matchup.opponent_rank if matchup else None
+
+    # Fetch game line (Vegas + weather) if matchup exists
+    game_line = None
+    if matchup is not None:
+        team = player.team
+        game_line = db.query(GameLine).filter(
+            GameLine.week == matchup.week,
+            (GameLine.home_team == team) | (GameLine.away_team == team),
+        ).first()
+
+    # Compute player's implied total (home or away)
+    vegas_implied_total = None
+    if game_line is not None:
+        if player.team == game_line.home_team:
+            vegas_implied_total = game_line.home_implied_total
+        else:
+            vegas_implied_total = game_line.away_implied_total
 
     # Build signals based on position
     position = player.position or ""
@@ -126,6 +143,12 @@ def _build_recommendation(player_id: int, format: str, db: Session) -> dict:
             player.week4_carry_share,
         ],
         "updated_at": player.updated_at.isoformat() if player.updated_at is not None else None,
+        "vegas_implied_total": vegas_implied_total,
+        "game_total": game_line.game_total if game_line else None,
+        "weather_flag": game_line.weather_flag if game_line else False,
+        "wind_mph": game_line.wind_mph if game_line else None,
+        "precip_probability": game_line.precip_probability if game_line else None,
+        "is_dome": game_line.is_dome if game_line else None,
     }
 
 

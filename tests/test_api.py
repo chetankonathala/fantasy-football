@@ -8,7 +8,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from src.fantasy.db.base import Base
-from src.fantasy.db.models import Matchup, Player
+from src.fantasy.db.models import GameLine, Matchup, Player
 
 
 @pytest.fixture
@@ -303,3 +303,110 @@ def test_compare_both_invalid_returns_404(compare_fixture):
     c, session, player_a, player_b = compare_fixture
     resp = c.get("/compare?a=999998&b=999999")
     assert resp.status_code == 404
+
+
+# ---------------------------------------------------------------------------
+# Vegas / weather GameLine tests
+# ---------------------------------------------------------------------------
+
+
+def test_player_detail_includes_vegas_and_weather(client):
+    """GET /player/{id} includes vegas_implied_total and weather_flag when GameLine exists."""
+    c, session = client
+    matchup = Matchup(week=1, team="KC", position="QB", opponent_rank=10, dvp_score=30.0)
+    session.add(matchup)
+    session.flush()
+    gl = GameLine(
+        week=1, home_team="KC", away_team="BUF",
+        game_total=47.5, home_spread=-3.5,
+        home_implied_total=25.5, away_implied_total=22.0,
+        is_dome=False, wind_mph=20.0, precip_probability=10,
+        weather_flag=True, game_date="2026-01-04",
+    )
+    session.add(gl)
+    session.flush()
+    player = make_player("nfl_vegas_01", "Patrick Mahomes", "QB", "KC", matchup_id=matchup.id)
+    session.add(player)
+    session.commit()
+    resp = c.get(f"/player/{player.id}")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["vegas_implied_total"] == 25.5
+    assert data["game_total"] == 47.5
+    assert data["weather_flag"] is True
+    assert data["wind_mph"] == 20.0
+
+
+def test_player_detail_away_team_implied_total(client):
+    """Away team player gets away_implied_total, not home_implied_total."""
+    c, session = client
+    matchup = Matchup(week=2, team="BUF", position="QB", opponent_rank=15, dvp_score=25.0)
+    session.add(matchup)
+    session.flush()
+    gl = GameLine(
+        week=2, home_team="KC", away_team="BUF",
+        game_total=50.0, home_spread=-3.5,
+        home_implied_total=26.75, away_implied_total=23.25,
+        is_dome=False, wind_mph=5.0, precip_probability=0,
+        weather_flag=False, game_date="2026-01-11",
+    )
+    session.add(gl)
+    session.flush()
+    player = make_player("nfl_vegas_02", "Josh Allen", "QB", "BUF", matchup_id=matchup.id)
+    session.add(player)
+    session.commit()
+    resp = c.get(f"/player/{player.id}")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["vegas_implied_total"] == 23.25
+    assert data["weather_flag"] is False
+
+
+def test_player_detail_no_game_line(client):
+    """Player with no GameLine returns vegas_implied_total=None and weather_flag=False."""
+    c, session = client
+    matchup = Matchup(week=3, team="PHI", position="WR", opponent_rank=8, dvp_score=40.0)
+    session.add(matchup)
+    session.flush()
+    player = make_player("nfl_vegas_03", "A.J. Brown", "WR", "PHI", matchup_id=matchup.id)
+    session.add(player)
+    session.commit()
+    resp = c.get(f"/player/{player.id}")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["vegas_implied_total"] is None
+    assert data["game_total"] is None
+    assert data["weather_flag"] is False
+    assert data["wind_mph"] is None
+    assert data["precip_probability"] is None
+    assert data["is_dome"] is None
+
+
+def test_compare_includes_vegas_fields(client):
+    """/compare returns vegas_implied_total and weather_flag for both players."""
+    c, session = client
+    matchup = Matchup(week=1, team="SF", position="WR", opponent_rank=3, dvp_score=50.0)
+    session.add(matchup)
+    session.flush()
+    gl = GameLine(
+        week=1, home_team="SF", away_team="DAL",
+        game_total=48.0, home_spread=-7.0,
+        home_implied_total=27.5, away_implied_total=20.5,
+        is_dome=False, wind_mph=8.0, precip_probability=5,
+        weather_flag=False, game_date="2026-01-04",
+    )
+    session.add(gl)
+    session.flush()
+    player_a = make_player("nfl_cmp_sf_01", "Deebo Samuel", "WR", "SF", matchup_id=matchup.id)
+    player_b = make_player("nfl_cmp_dal_01", "CeeDee Lamb", "WR", "DAL", matchup_id=matchup.id)
+    session.add(player_a)
+    session.add(player_b)
+    session.commit()
+    resp = c.get(f"/compare?a={player_a.id}&b={player_b.id}")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["player_a"]["vegas_implied_total"] == 27.5  # SF is home
+    assert data["player_b"]["vegas_implied_total"] == 20.5  # DAL is away
+    for key in ("game_total", "weather_flag", "wind_mph", "precip_probability", "is_dome"):
+        assert key in data["player_a"]
+        assert key in data["player_b"]
