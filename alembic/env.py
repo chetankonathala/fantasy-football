@@ -1,7 +1,9 @@
 """Alembic migration environment configuration.
 
-SQLite-specific: render_as_batch=True is REQUIRED for ALTER TABLE support.
+- SQLite (local dev): render_as_batch=True is REQUIRED for ALTER TABLE support.
+- PostgreSQL (production): render_as_batch must be False; DATABASE_URL env var drives the URL.
 """
+import os
 import sys
 from logging.config import fileConfig
 from pathlib import Path
@@ -12,11 +14,15 @@ from sqlalchemy import engine_from_config, pool
 # Add project root to sys.path so src.fantasy imports resolve.
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.fantasy.db.base import Base  # noqa: E402
+from src.fantasy.db.base import Base, DATABASE_URL, IS_POSTGRES  # noqa: E402
 import src.fantasy.db.models  # noqa: F401, E402 — import models to register them with metadata
 
 # Alembic Config object — provides access to values within alembic.ini
 config = context.config
+
+# Override the sqlalchemy.url from alembic.ini with the runtime DATABASE_URL.
+# This ensures `alembic upgrade head` in render-start.sh uses the correct DB.
+config.set_main_option("sqlalchemy.url", DATABASE_URL)
 
 # Interpret the config file for Python logging.
 if config.config_file_name is not None:
@@ -25,43 +31,37 @@ if config.config_file_name is not None:
 # target_metadata — the SQLAlchemy metadata for autogenerate
 target_metadata = Base.metadata
 
+# render_as_batch is required for SQLite ALTER TABLE; must be False for PostgreSQL.
+_render_as_batch = not IS_POSTGRES
+
 
 def run_migrations_offline() -> None:
-    """Run migrations in 'offline' mode.
-
-    This configures the context with just a URL and not an Engine.
-    """
+    """Run migrations in 'offline' mode."""
     url = config.get_main_option("sqlalchemy.url")
     context.configure(
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
-        render_as_batch=True,  # REQUIRED for SQLite ALTER TABLE support
+        render_as_batch=_render_as_batch,
     )
-
     with context.begin_transaction():
         context.run_migrations()
 
 
 def run_migrations_online() -> None:
-    """Run migrations in 'online' mode.
-
-    Creates an Engine and associates a connection with the context.
-    """
+    """Run migrations in 'online' mode."""
     connectable = engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
-
     with connectable.connect() as connection:
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
-            render_as_batch=True,  # REQUIRED for SQLite ALTER TABLE support
+            render_as_batch=_render_as_batch,
         )
-
         with context.begin_transaction():
             context.run_migrations()
 

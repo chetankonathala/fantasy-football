@@ -1,4 +1,4 @@
-"""SQLAlchemy ORM models for Player, Matchup, and GameLine tables."""
+"""SQLAlchemy ORM models for Player, Matchup, GameLine, DynastyValue, KeeperCost, and DraftSession tables."""
 from datetime import datetime, timezone
 
 from sqlalchemy import (
@@ -9,6 +9,7 @@ from sqlalchemy import (
     ForeignKey,
     Integer,
     String,
+    Text,
     UniqueConstraint,
 )
 
@@ -115,4 +116,71 @@ class GameLine(Base):
 
     __table_args__ = (
         UniqueConstraint("week", "home_team", "away_team", name="uq_gameline_week_home_away"),
+    )
+
+
+class DynastyValue(Base):
+    """Dynasty value table: FantasyCalc dynasty trade values for players and picks."""
+
+    __tablename__ = "dynasty_value"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    fantasycalc_id = Column(Integer, nullable=True)
+    sleeper_id = Column(String(20), nullable=True, index=True)
+    player_name = Column(String(100), nullable=False, unique=True)
+    position = Column(String(10), nullable=True)   # QB, RB, WR, TE, PICK
+    team = Column(String(10), nullable=True)
+    age = Column(Float, nullable=True)
+    value = Column(Integer, nullable=False)
+    overall_rank = Column(Integer, nullable=True)
+    position_rank = Column(Integer, nullable=True)
+    trend_30day = Column(Integer, nullable=True)    # value change over last 30 days
+    is_pick = Column(Boolean, nullable=False, default=False)
+    updated_at = Column(
+        DateTime,
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+
+class KeeperCost(Base):
+    """Keeper cost table: user-managed keeper acquisition costs per player."""
+
+    __tablename__ = "keeper_cost"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    player_name = Column(String(100), nullable=False, unique=True)
+    dynasty_value_id = Column(Integer, ForeignKey("dynasty_value.id"), nullable=True)
+    keeper_round = Column(Integer, nullable=False)  # draft round you'd spend to keep them
+    notes = Column(String(200), nullable=True)
+    updated_at = Column(
+        DateTime,
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+
+class DraftSession(Base):
+    """Draft session table: live snake draft board state."""
+
+    __tablename__ = "draft_session"
+
+    id = Column(String(36), primary_key=True)           # UUID
+    num_teams = Column(Integer, nullable=False)          # 8-14
+    num_rounds = Column(Integer, nullable=False)         # typically 15-20
+    user_team_slot = Column(Integer, nullable=False)     # 1-indexed draft position
+    drafted_ids = Column(Text, nullable=False, default="[]")   # JSON list of dynasty_value IDs in pick order
+    queued_ids = Column(Text, nullable=False, default="[]")    # JSON list of dynasty_value IDs user wants
+    created_at = Column(
+        DateTime,
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+    updated_at = Column(
+        DateTime,
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
     )

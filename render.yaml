@@ -1,0 +1,92 @@
+---
+# Render Blueprint — Fantasy Football backend + PostgreSQL + cron jobs
+# Docs: https://render.com/docs/blueprint-spec
+#
+# Deploy steps:
+#   1. Push this repo to GitHub
+#   2. Go to render.com → New → Blueprint → select the repo
+#   3. Render will create all services below automatically
+#   4. After first deploy, set ODDS_API_KEY in the web service env vars
+
+services:
+  # -----------------------------------------------------------------------
+  # Web service — FastAPI backend
+  # -----------------------------------------------------------------------
+  - type: web
+    name: fantasy-football-api
+    runtime: python
+    region: ohio
+    plan: free
+    buildCommand: pip install uv && uv sync
+    startCommand: bash render-start.sh
+    healthCheckPath: /docs
+
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: fantasy-football-db
+          property: connectionString
+
+      - key: FRONTEND_URL
+        sync: false   # set manually after Vercel deploy: https://your-app.vercel.app
+
+      - key: ODDS_API_KEY
+        sync: false   # set manually: https://the-odds-api.com
+
+      - key: PYTHON_VERSION
+        value: "3.13.1"
+
+  # -----------------------------------------------------------------------
+  # Cron — daily player/matchup/Vegas/weather refresh (runs during NFL season)
+  # -----------------------------------------------------------------------
+  - type: cron
+    name: fantasy-refresh-daily
+    runtime: python
+    region: ohio
+    plan: free
+    schedule: "0 10 * * *"   # 10:00 UTC = 6am ET daily
+    buildCommand: pip install uv && uv sync
+    startCommand: uv run python scripts/refresh.py
+
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: fantasy-football-db
+          property: connectionString
+
+      - key: ODDS_API_KEY
+        sync: false
+
+      - key: PYTHON_VERSION
+        value: "3.13.1"
+
+  # -----------------------------------------------------------------------
+  # Cron — weekly dynasty value refresh (FantasyCalc, every Monday)
+  # -----------------------------------------------------------------------
+  - type: cron
+    name: fantasy-refresh-dynasty
+    runtime: python
+    region: ohio
+    plan: free
+    schedule: "0 12 * * 1"   # 12:00 UTC Monday = 8am ET Monday
+    buildCommand: pip install uv && uv sync
+    startCommand: uv run python scripts/refresh_dynasty.py
+
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: fantasy-football-db
+          property: connectionString
+
+      - key: PYTHON_VERSION
+        value: "3.13.1"
+
+# -----------------------------------------------------------------------
+# PostgreSQL database
+# -----------------------------------------------------------------------
+databases:
+  - name: fantasy-football-db
+    region: ohio
+    plan: free
+    databaseName: fantasy
+    user: fantasy
