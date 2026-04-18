@@ -1,9 +1,16 @@
-"""SQLite upsert helpers for Player and Matchup tables.
+"""Dialect-aware upsert helpers for Player, Matchup, and GameLine tables.
 
-Uses SQLite-specific insert().on_conflict_do_update() for atomic upsert semantics.
+Uses insert().on_conflict_do_update() for atomic upsert semantics.
+Imports the correct dialect insert (PostgreSQL or SQLite) based on DATABASE_URL.
 Never does a full-wipe; always upserts by canonical ID.
 """
-from sqlalchemy.dialects.sqlite import insert
+from src.fantasy.db.base import IS_POSTGRES
+
+if IS_POSTGRES:
+    from sqlalchemy.dialects.postgresql import insert
+else:
+    from sqlalchemy.dialects.sqlite import insert
+
 from sqlalchemy.orm import Session
 
 from src.fantasy.db.models import GameLine, Matchup, Player

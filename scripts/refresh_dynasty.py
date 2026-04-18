@@ -6,7 +6,11 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from datetime import datetime, timezone
 
-from sqlalchemy.dialects.sqlite import insert
+from src.fantasy.db.base import IS_POSTGRES
+if IS_POSTGRES:
+    from sqlalchemy.dialects.postgresql import insert
+else:
+    from sqlalchemy.dialects.sqlite import insert
 
 from src.fantasy.db.base import get_session_factory
 from src.fantasy.db.models import DynastyValue
