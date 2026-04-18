@@ -32,6 +32,9 @@ export default function RootLayout({
             <Link href="/trade" className="text-sm text-[#A5ACAF] hover:text-white transition-colors">
               Trade
             </Link>
+            <Link href="/my-team" className="text-sm text-[#A5ACAF] hover:text-white transition-colors">
+              My Team
+            </Link>
             <Link href="/draft" className="text-sm text-[#A5ACAF] hover:text-white transition-colors">
               Draft Room
             </Link>

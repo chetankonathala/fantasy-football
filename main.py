@@ -859,3 +859,85 @@ def get_available_players(
 
     rows = query.order_by(DynastyValue.overall_rank).limit(limit).all()
     return [_dynasty_item_full(r) for r in rows]
+
+
+# ---------------------------------------------------------------------------
+# My Team — ESPN Fantasy Integration
+# ---------------------------------------------------------------------------
+
+# Config: league + team identity (personal use — override via env vars)
+_ESPN_LEAGUE_ID = int(os.environ.get("ESPN_LEAGUE_ID", "1805449289"))
+_ESPN_TEAM_ID   = int(os.environ.get("ESPN_TEAM_ID",   "9"))
+_ESPN_SEASON    = int(os.environ.get("ESPN_SEASON",    "2025"))
+
+# Lineup slot ordering for display
+_SLOT_ORDER = {"QB": 0, "RB": 1, "WR": 2, "TE": 3, "FLEX": 4, "K": 5, "D/ST": 6, "BE": 7, "IR": 8}
+
+
+def _match_player_in_db(full_name: str, db: Session) -> Optional[Player]:
+    """Find a DB player by exact name, then normalized ilike, then first+last name split."""
+    p = db.query(Player).filter(Player.full_name == full_name).first()
+    if p:
+        return p
+    normalized = full_name.replace("\u2019", "'").replace("\u2018", "'")
+    p = db.query(Player).filter(Player.full_name.ilike(normalized)).first()
+    if p:
+        return p
+    parts = full_name.split()
+    if len(parts) >= 2:
+        p = (
+            db.query(Player)
+            .filter(Player.last_name.ilike(parts[-1]), Player.first_name.ilike(parts[0]))
+            .first()
+        )
+    return p
+
+
+@app.get("/my-team")
+def get_my_team(format: str = "ppr", db: Session = Depends(get_db)):
+    """Return Chetan's DFK roster with start/sit recommendations per player."""
+    from src.fantasy.fetch.espn import fetch_my_roster
+
+    try:
+        espn_data = fetch_my_roster(
+            league_id=_ESPN_LEAGUE_ID,
+            team_id=_ESPN_TEAM_ID,
+            season=_ESPN_SEASON,
+        )
+    except EnvironmentError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"ESPN API error: {e}")
+
+    roster = []
+    for esp_player in espn_data["players"]:
+        entry: dict = {
+            "full_name": esp_player["full_name"],
+            "position": esp_player["position"],
+            "lineup_slot": esp_player["lineup_slot"],
+            "is_bench": esp_player["is_bench"],
+            "on_ir": esp_player["on_ir"],
+            "espn_injury_status": esp_player["espn_injury_status"],
+            "recommendation": None,
+        }
+
+        db_player = _match_player_in_db(esp_player["full_name"], db)
+        if db_player is not None:
+            try:
+                rec = _build_recommendation(db_player.id, format, db)
+                entry["recommendation"] = rec
+            except HTTPException:
+                pass
+
+        roster.append(entry)
+
+    roster.sort(key=lambda x: (_SLOT_ORDER.get(x["lineup_slot"], 99), x["full_name"]))
+
+    return {
+        "team_id": espn_data["team_id"],
+        "record": f"{espn_data['wins']}-{espn_data['losses']}",
+        "points_for": espn_data["points_for"],
+        "league_id": _ESPN_LEAGUE_ID,
+        "season": _ESPN_SEASON,
+        "roster": roster,
+    }
