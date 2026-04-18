@@ -43,7 +43,6 @@ services:
     name: fantasy-refresh-daily
     runtime: python
     region: ohio
-    plan: free
     schedule: "0 10 * * *"   # 10:00 UTC = 6am ET daily
     buildCommand: pip install uv && uv sync
     startCommand: uv run python scripts/refresh.py
@@ -67,7 +66,6 @@ services:
     name: fantasy-refresh-dynasty
     runtime: python
     region: ohio
-    plan: free
     schedule: "0 12 * * 1"   # 12:00 UTC Monday = 8am ET Monday
     buildCommand: pip install uv && uv sync
     startCommand: uv run python scripts/refresh_dynasty.py
