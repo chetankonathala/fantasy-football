@@ -36,8 +36,8 @@
 ### Comparison & Enrichment
 
 - [ ] **COMP-01**: User can compare two players side-by-side (A vs. B view) to make a direct start/sit decision
-- [ ] **ENRI-01**: User can see a Vegas implied team total overlay alongside the recommendation
-- [ ] **ENRI-02**: User can see a weather flag for outdoor games (pass game suppression signal)
+- [x] **ENRI-01**: User can see a Vegas implied team total overlay alongside the recommendation
+- [x] **ENRI-02**: User can see a weather flag for outdoor games (pass game suppression signal)
 
 ### Trade Analyzer
 
@@ -107,8 +107,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | RECD-05 | Phase 3 | Complete |
 | DATA-02 | Phase 3 | Complete |
 | COMP-01 | Phase 4 | Pending |
-| ENRI-01 | Phase 4 | Pending |
-| ENRI-02 | Phase 4 | Pending |
+| ENRI-01 | Phase 4 | Complete |
+| ENRI-02 | Phase 4 | Complete |
 | TRAD-01 | Phase 5 | Pending |
 | TRAD-02 | Phase 5 | Pending |
 | TRAD-03 | Phase 5 | Pending |

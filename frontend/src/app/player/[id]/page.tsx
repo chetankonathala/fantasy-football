@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { RecommendationCard } from "@/components/RecommendationCard";
+import { PlayerHeadshot } from "@/components/PlayerHeadshot";
 import { API_BASE } from "@/lib/api";
 
 type PlayerPageProps = {
@@ -65,10 +66,12 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
 
       {/* Player header */}
       <div className="mt-5 flex items-center gap-4">
-        {/* Position badge */}
-        <div className="flex-shrink-0 w-12 h-12 rounded-full bg-[#004C54]/30 border border-[#004C54] flex items-center justify-center text-sm font-bold text-[#A5ACAF]">
-          {data.position}
-        </div>
+        <PlayerHeadshot
+          sleeperId={data.sleeper_id}
+          playerName={data.full_name}
+          position={data.position}
+          size={56}
+        />
         <div>
           <h1 className="text-2xl font-extrabold text-white leading-tight">{data.full_name}</h1>
           <p className="text-sm text-[#A5ACAF]">{data.position} · {data.team}</p>

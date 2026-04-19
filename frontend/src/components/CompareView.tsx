@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { FreshnessStamp } from "@/components/FreshnessStamp";
+import { PlayerHeadshot } from "@/components/PlayerHeadshot";
 import { API_BASE } from "@/lib/api";
 
 interface PlayerResult {
@@ -26,6 +27,7 @@ interface PlayerRec {
   full_name: string;
   position: string;
   team: string;
+  sleeper_id: string | null;
   vegas_implied_total: number | null;
   game_total: number | null;
   weather_flag: boolean;
@@ -189,11 +191,19 @@ function PlayerColumn({ rec }: { rec: PlayerRec }) {
   return (
     <div className="bg-[#111827] rounded-xl p-5">
       {/* Header */}
-      <div className="mb-4">
-        <h2 className="text-lg font-extrabold text-white">{rec.full_name}</h2>
-        <p className="text-sm text-[#A5ACAF]">
-          {rec.position} · {rec.team}
-        </p>
+      <div className="flex items-center gap-3 mb-4">
+        <PlayerHeadshot
+          sleeperId={rec.sleeper_id}
+          playerName={rec.full_name}
+          position={rec.position}
+          size={48}
+        />
+        <div>
+          <h2 className="text-lg font-extrabold text-white">{rec.full_name}</h2>
+          <p className="text-sm text-[#A5ACAF]">
+            {rec.position} · {rec.team}
+          </p>
+        </div>
       </div>
 
       {/* Verdict */}
