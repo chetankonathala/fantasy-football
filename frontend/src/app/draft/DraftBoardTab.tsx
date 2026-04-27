@@ -647,18 +647,30 @@ export function DraftBoardTab() {
     return <SetupScreen onStart={setActiveSession} />;
   }
 
+  const isDraftComplete = activeSession.current_pick > activeSession.num_teams * activeSession.num_rounds;
+
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
         <div className="text-xs text-[#6B7280]">
           {activeSession.num_teams}-team snake · {activeSession.num_rounds} rounds · Your slot: {activeSession.user_team_slot}
         </div>
-        <button
-          onClick={() => setActiveSession(null)}
-          className="text-xs text-[#A5ACAF] hover:text-white transition-colors"
-        >
-          ← New Draft
-        </button>
+        <div className="flex items-center gap-3">
+          {isDraftComplete && (
+            <a
+              href={`/my-team/setup?from_draft=${activeSession.id}`}
+              className="px-3 py-1.5 bg-[#004C54] hover:bg-[#005f6a] text-white text-xs font-bold rounded-lg transition-colors"
+            >
+              Export to My Team →
+            </a>
+          )}
+          <button
+            onClick={() => setActiveSession(null)}
+            className="text-xs text-[#A5ACAF] hover:text-white transition-colors"
+          >
+            ← New Draft
+          </button>
+        </div>
       </div>
       <DraftBoardView session={activeSession} />
     </div>

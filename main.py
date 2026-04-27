@@ -1,16 +1,22 @@
-"""FastAPI application — /search, /player/{id}, /compare, /dynasty/*, /draft/* routes."""
+"""FastAPI application — /search, /player/{id}, /compare, /dynasty/*, /draft/*, /leagues/* routes."""
 import json
 import os
+import time
 import uuid
 from typing import List, Optional
 
-from fastapi import Depends, FastAPI, HTTPException
+import httpx
+from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from jose import JWTError, jwt
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from src.fantasy.db.base import get_session_factory
-from src.fantasy.db.models import DraftSession, DynastyValue, GameLine, KeeperCost, Matchup, Player
+from src.fantasy.db.models import (
+    DraftSession, DynastyValue, GameLine, KeeperCost, Matchup, Player,
+    UserLeague, UserRosterPlayer,
+)
 from src.fantasy.engine import (
     DSTSignals,
     KickerSignals,
@@ -29,9 +35,62 @@ if os.environ.get("FRONTEND_URL"):
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins,
-    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
+
+# ---------------------------------------------------------------------------
+# Clerk JWT auth
+# ---------------------------------------------------------------------------
+
+_JWKS_CACHE: dict = {"keys": [], "fetched_at": 0.0}
+_JWKS_TTL = 3600  # re-fetch public keys at most once per hour
+
+
+def _fetch_jwks(issuer: str) -> list:
+    now = time.time()
+    if _JWKS_CACHE["keys"] and (now - _JWKS_CACHE["fetched_at"]) < _JWKS_TTL:
+        return _JWKS_CACHE["keys"]
+    url = f"{issuer}/.well-known/jwks.json"
+    resp = httpx.get(url, timeout=10)
+    resp.raise_for_status()
+    keys = resp.json()["keys"]
+    _JWKS_CACHE.update({"keys": keys, "fetched_at": now})
+    return keys
+
+
+def _verify_clerk_token(token: str) -> str:
+    """Verify a Clerk-issued JWT and return the user_id (sub claim)."""
+    try:
+        header = jwt.get_unverified_header(token)
+        claims = jwt.get_unverified_claims(token)
+        issuer = claims.get("iss", "")
+        if not issuer:
+            raise HTTPException(status_code=401, detail="Invalid token: missing issuer")
+        keys = _fetch_jwks(issuer)
+        kid = header.get("kid")
+        key = next((k for k in keys if k.get("kid") == kid), None)
+        if key is None:
+            # Key not found — bust cache and retry once
+            _JWKS_CACHE["fetched_at"] = 0.0
+            keys = _fetch_jwks(issuer)
+            key = next((k for k in keys if k.get("kid") == kid), None)
+        if key is None:
+            raise HTTPException(status_code=401, detail="Invalid token: signing key not found")
+        payload = jwt.decode(token, key, algorithms=["RS256"], options={"verify_aud": False})
+        user_id = payload.get("sub")
+        if not user_id:
+            raise HTTPException(status_code=401, detail="Invalid token: missing sub")
+        return user_id
+    except JWTError as exc:
+        raise HTTPException(status_code=401, detail=f"Invalid token: {exc}")
+
+
+def get_current_user(authorization: Optional[str] = Header(default=None)) -> str:
+    """FastAPI dependency — extract and verify Clerk JWT, return user_id."""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Authorization header required")
+    return _verify_clerk_token(authorization.split(" ", 1)[1])
 
 SessionLocal = get_session_factory()
 
@@ -859,6 +918,229 @@ def get_available_players(
 
     rows = query.order_by(DynastyValue.overall_rank).limit(limit).all()
     return [_dynasty_item_full(r) for r in rows]
+
+
+# ---------------------------------------------------------------------------
+# User Leagues & Custom Roster
+# ---------------------------------------------------------------------------
+
+class LeagueCreateRequest(BaseModel):
+    name: str
+    scoring_format: str = "ppr"
+    num_teams: int = 12
+
+
+class RosterAddRequest(BaseModel):
+    player_id: int
+    position_slot: str = "roster"
+
+
+def _league_to_dict(league: UserLeague, roster_count: int = 0) -> dict:
+    return {
+        "id": league.id,
+        "name": league.name,
+        "scoring_format": league.scoring_format,
+        "num_teams": league.num_teams,
+        "draft_session_id": league.draft_session_id,
+        "roster_count": roster_count,
+        "created_at": league.created_at.isoformat() if league.created_at else None,
+    }
+
+
+@app.post("/leagues", status_code=201)
+def create_league(
+    body: LeagueCreateRequest,
+    user_id: str = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if body.scoring_format not in ("ppr", "half_ppr", "standard"):
+        raise HTTPException(status_code=422, detail="scoring_format must be ppr, half_ppr, or standard")
+    if not (2 <= body.num_teams <= 20):
+        raise HTTPException(status_code=422, detail="num_teams must be 2–20")
+    league = UserLeague(
+        user_id=user_id,
+        name=body.name,
+        scoring_format=body.scoring_format,
+        num_teams=body.num_teams,
+    )
+    db.add(league)
+    db.commit()
+    db.refresh(league)
+    return _league_to_dict(league)
+
+
+@app.get("/leagues")
+def list_leagues(
+    user_id: str = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    leagues = (
+        db.query(UserLeague)
+        .filter(UserLeague.user_id == user_id)
+        .order_by(UserLeague.created_at.desc())
+        .all()
+    )
+    result = []
+    for league in leagues:
+        count = db.query(UserRosterPlayer).filter(UserRosterPlayer.league_id == league.id).count()
+        result.append(_league_to_dict(league, roster_count=count))
+    return result
+
+
+@app.get("/leagues/{league_id}")
+def get_league(
+    league_id: int,
+    user_id: str = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    league = db.query(UserLeague).filter(
+        UserLeague.id == league_id, UserLeague.user_id == user_id
+    ).first()
+    if not league:
+        raise HTTPException(status_code=404, detail="League not found")
+
+    entries = db.query(UserRosterPlayer).filter(UserRosterPlayer.league_id == league_id).all()
+    _SLOT_ORDER = {"QB": 0, "RB": 1, "WR": 2, "TE": 3, "K": 4, "DST": 5}
+    roster = []
+    for entry in entries:
+        try:
+            rec = _build_recommendation(entry.player_id, league.scoring_format, db)
+            rec["position_slot"] = entry.position_slot
+            rec["roster_player_id"] = entry.id
+            roster.append(rec)
+        except HTTPException:
+            pass
+    roster.sort(key=lambda x: (_SLOT_ORDER.get(x.get("position", ""), 99), x.get("full_name", "")))
+
+    return {**_league_to_dict(league, roster_count=len(roster)), "roster": roster}
+
+
+@app.delete("/leagues/{league_id}", status_code=204)
+def delete_league(
+    league_id: int,
+    user_id: str = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    league = db.query(UserLeague).filter(
+        UserLeague.id == league_id, UserLeague.user_id == user_id
+    ).first()
+    if not league:
+        raise HTTPException(status_code=404, detail="League not found")
+    db.delete(league)
+    db.commit()
+
+
+@app.post("/leagues/{league_id}/roster", status_code=201)
+def add_to_roster(
+    league_id: int,
+    body: RosterAddRequest,
+    user_id: str = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    league = db.query(UserLeague).filter(
+        UserLeague.id == league_id, UserLeague.user_id == user_id
+    ).first()
+    if not league:
+        raise HTTPException(status_code=404, detail="League not found")
+    player = db.query(Player).filter(Player.id == body.player_id).first()
+    if not player:
+        raise HTTPException(status_code=404, detail="Player not found")
+    existing = db.query(UserRosterPlayer).filter(
+        UserRosterPlayer.league_id == league_id,
+        UserRosterPlayer.player_id == body.player_id,
+    ).first()
+    if existing:
+        raise HTTPException(status_code=409, detail=f"{player.full_name} is already on this roster")
+    entry = UserRosterPlayer(
+        league_id=league_id,
+        player_id=body.player_id,
+        position_slot=body.position_slot,
+    )
+    db.add(entry)
+    db.commit()
+    db.refresh(entry)
+    return {"id": entry.id, "player_id": entry.player_id, "position_slot": entry.position_slot}
+
+
+@app.delete("/leagues/{league_id}/roster/{roster_player_id}", status_code=204)
+def remove_from_roster(
+    league_id: int,
+    roster_player_id: int,
+    user_id: str = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    league = db.query(UserLeague).filter(
+        UserLeague.id == league_id, UserLeague.user_id == user_id
+    ).first()
+    if not league:
+        raise HTTPException(status_code=404, detail="League not found")
+    entry = db.query(UserRosterPlayer).filter(
+        UserRosterPlayer.id == roster_player_id,
+        UserRosterPlayer.league_id == league_id,
+    ).first()
+    if not entry:
+        raise HTTPException(status_code=404, detail="Roster entry not found")
+    db.delete(entry)
+    db.commit()
+
+
+@app.post("/leagues/{league_id}/roster/from-draft/{session_id}", status_code=201)
+def import_roster_from_draft(
+    league_id: int,
+    session_id: str,
+    user_id: str = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Import the user's picks from a dynasty draft session into their league roster."""
+    league = db.query(UserLeague).filter(
+        UserLeague.id == league_id, UserLeague.user_id == user_id
+    ).first()
+    if not league:
+        raise HTTPException(status_code=404, detail="League not found")
+    draft = db.query(DraftSession).filter(DraftSession.id == session_id).first()
+    if not draft:
+        raise HTTPException(status_code=404, detail="Draft session not found")
+
+    # Identify the user's picks by team slot
+    drafted_ids: list[int] = json.loads(draft.drafted_ids)
+    pick_order = _snake_pick_order(draft.num_teams, draft.num_rounds)
+    user_pick_indices = {
+        p["pick"] - 1 for p in pick_order if p["team_slot"] == draft.user_team_slot
+    }
+    user_dv_ids = [drafted_ids[i] for i in sorted(user_pick_indices) if i < len(drafted_ids)]
+
+    added, skipped = [], []
+    for dv_id in user_dv_ids:
+        dv = db.query(DynastyValue).filter(DynastyValue.id == dv_id).first()
+        if not dv or dv.is_pick:
+            continue
+
+        # Match dynasty name → Player table (exact → ilike → first+last)
+        player = db.query(Player).filter(Player.full_name == dv.player_name).first()
+        if not player:
+            player = db.query(Player).filter(Player.full_name.ilike(dv.player_name)).first()
+        if not player:
+            parts = dv.player_name.split()
+            if len(parts) >= 2:
+                player = db.query(Player).filter(
+                    Player.last_name.ilike(parts[-1]),
+                    Player.first_name.ilike(parts[0]),
+                ).first()
+        if not player:
+            skipped.append(dv.player_name)
+            continue
+
+        already = db.query(UserRosterPlayer).filter(
+            UserRosterPlayer.league_id == league_id,
+            UserRosterPlayer.player_id == player.id,
+        ).first()
+        if not already:
+            db.add(UserRosterPlayer(league_id=league_id, player_id=player.id))
+            added.append(player.full_name)
+
+    league.draft_session_id = session_id
+    db.commit()
+    return {"added": added, "skipped": skipped, "added_count": len(added), "skipped_count": len(skipped)}
 
 
 # ---------------------------------------------------------------------------

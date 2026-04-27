@@ -184,3 +184,39 @@ class DraftSession(Base):
         default=lambda: datetime.now(timezone.utc),
         onupdate=lambda: datetime.now(timezone.utc),
     )
+
+
+class UserLeague(Base):
+    """User-created fantasy league with custom roster."""
+
+    __tablename__ = "user_league"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(String(100), nullable=False, index=True)   # Clerk sub claim
+    name = Column(String(100), nullable=False)
+    scoring_format = Column(String(10), nullable=False, default="ppr")  # ppr / half_ppr / standard
+    num_teams = Column(Integer, nullable=False, default=12)
+    draft_session_id = Column(String(36), ForeignKey("draft_session.id"), nullable=True)
+    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(
+        DateTime,
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+
+class UserRosterPlayer(Base):
+    """A player on a user's league roster."""
+
+    __tablename__ = "user_roster_player"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    league_id = Column(Integer, ForeignKey("user_league.id", ondelete="CASCADE"), nullable=False)
+    player_id = Column(Integer, ForeignKey("player.id"), nullable=False)
+    position_slot = Column(String(10), nullable=False, default="roster")  # starter / bench / ir / roster
+    added_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+
+    __table_args__ = (
+        UniqueConstraint("league_id", "player_id", name="uq_roster_league_player"),
+    )
