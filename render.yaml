@@ -88,13 +88,7 @@ services:
     region: ohio
     schedule: "0 13 * * 1"   # 13:00 UTC Monday = 9am ET Monday
     buildCommand: pip install uv && uv sync
-    startCommand: |
-      uv run python scripts/refresh_rookies.py && \
-      uv run python scripts/refresh_offseason_moves.py && \
-      uv run python scripts/refresh_nfl_draft.py && \
-      uv run python scripts/refresh_depth_charts.py && \
-      uv run python scripts/refresh_sos.py && \
-      uv run python scripts/refresh_dynasty_projections.py
+    startCommand: uv run python scripts/refresh_offseason.py
 
     envVars:
       - key: DATABASE_URL
