@@ -1,4 +1,4 @@
-"""FastAPI application — /search, /player/{id}, /compare, /dynasty/*, /draft/*, /leagues/* routes."""
+"""FastAPI application — /search, /player/{id}, /compare, /dynasty/*, /draft/*, /leagues/*, /offseason/* routes."""
 import json
 import os
 import time
@@ -14,8 +14,9 @@ from sqlalchemy.orm import Session
 
 from src.fantasy.db.base import get_session_factory
 from src.fantasy.db.models import (
-    DraftSession, DynastyValue, GameLine, KeeperCost, Matchup, Player,
-    UserLeague, UserRosterPlayer,
+    DraftSession, DynastyProjection, DynastyValue, GameLine, HistoricalRookieComp,
+    KeeperCost, Matchup, NFLDraftPick, OffseasonMove, Player, RookiePick,
+    ScheduleStrength, TeamDepthChart, UserLeague, UserRosterPlayer,
 )
 from src.fantasy.engine import (
     DSTSignals,
@@ -1222,4 +1223,712 @@ def get_my_team(format: str = "ppr", db: Session = Depends(get_db)):
         "league_id": _ESPN_LEAGUE_ID,
         "season": _ESPN_SEASON,
         "roster": roster,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Offseason Analysis Hub — /offseason/*
+# ---------------------------------------------------------------------------
+
+
+def _rookie_to_dict(r: RookiePick) -> dict:
+    return {
+        "id": r.id,
+        "player_name": r.player_name,
+        "position": r.position,
+        "team": r.team,
+        "college": r.college,
+        "nfl_round": r.nfl_round,
+        "nfl_pick": r.nfl_pick,
+        "age": r.age,
+        "dynasty_value": r.dynasty_value,
+        "dynasty_overall_rank": r.dynasty_overall_rank,
+        "dynasty_position_rank": r.dynasty_position_rank,
+        "opportunity_grade": r.opportunity_grade,
+        "opportunity_note": r.opportunity_note,
+        "year1_projection": r.year1_projection,
+        "sleeper_id": r.sleeper_id,
+    }
+
+
+def _move_to_dict(m: OffseasonMove) -> dict:
+    return {
+        "id": m.id,
+        "player_name": m.player_name,
+        "position": m.position,
+        "from_team": m.from_team,
+        "to_team": m.to_team,
+        "move_type": m.move_type,
+        "fantasy_impact": m.fantasy_impact,
+        "impact_direction": m.impact_direction,
+        "impact_note": m.impact_note,
+        "dynasty_value": m.dynasty_value,
+        "sleeper_id": m.sleeper_id,
+    }
+
+
+@app.get("/offseason/rookies")
+def offseason_rookies(
+    position: Optional[str] = None,
+    grade: Optional[str] = None,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+):
+    """2026 rookie class with NFL draft slot, landing team, opportunity grade, and year-1 projection.
+
+    Optional filters: position (QB/RB/WR/TE), grade (A/B/C/D).
+    Sorted by dynasty_overall_rank ascending (best first), unranked last.
+    """
+    q = db.query(RookiePick)
+    if position:
+        q = q.filter(RookiePick.position == position.upper())
+    if grade:
+        q = q.filter(RookiePick.opportunity_grade == grade.upper())
+    rows = q.order_by(
+        RookiePick.dynasty_overall_rank.asc().nulls_last(),
+        RookiePick.nfl_pick.asc().nulls_last(),
+    ).limit(limit).all()
+    return {"rookies": [_rookie_to_dict(r) for r in rows], "total": len(rows)}
+
+
+@app.get("/offseason/moves")
+def offseason_moves(
+    position: Optional[str] = None,
+    impact: Optional[str] = None,
+    move_type: Optional[str] = None,
+    team: Optional[str] = None,
+    limit: int = 200,
+    db: Session = Depends(get_db),
+):
+    """Offseason transaction feed: free agent signings, trades, cuts.
+
+    Optional filters: position, impact (high/medium/low), move_type, team (from or to).
+    Sorted by dynasty_value desc (highest value players first).
+    """
+    q = db.query(OffseasonMove)
+    if position:
+        q = q.filter(OffseasonMove.position == position.upper())
+    if impact:
+        q = q.filter(OffseasonMove.fantasy_impact == impact.lower())
+    if move_type:
+        q = q.filter(OffseasonMove.move_type == move_type.lower())
+    if team:
+        team_upper = team.upper()
+        q = q.filter(
+            (OffseasonMove.from_team == team_upper) | (OffseasonMove.to_team == team_upper)
+        )
+    rows = q.order_by(
+        OffseasonMove.dynasty_value.desc().nulls_last()
+    ).limit(limit).all()
+    return {"moves": [_move_to_dict(m) for m in rows], "total": len(rows)}
+
+
+@app.get("/offseason/risers-fallers")
+def offseason_risers_fallers(limit: int = 20, db: Session = Depends(get_db)):
+    """Players whose dynasty value trended most sharply over the last 30 days.
+
+    Returns separate risers (positive trend) and fallers (negative trend) lists,
+    sorted by absolute trend magnitude. Excludes picks.
+    """
+    q = (
+        db.query(DynastyValue)
+        .filter(DynastyValue.is_pick == False, DynastyValue.trend_30day.isnot(None))  # noqa: E712
+    )
+    risers = (
+        q.filter(DynastyValue.trend_30day > 0)
+        .order_by(DynastyValue.trend_30day.desc())
+        .limit(limit)
+        .all()
+    )
+    fallers = (
+        q.filter(DynastyValue.trend_30day < 0)
+        .order_by(DynastyValue.trend_30day.asc())
+        .limit(limit)
+        .all()
+    )
+
+    def _fmt(dv: DynastyValue) -> dict:
+        return {
+            "id": dv.id,
+            "player_name": dv.player_name,
+            "position": dv.position,
+            "team": dv.team,
+            "age": dv.age,
+            "value": dv.value,
+            "overall_rank": dv.overall_rank,
+            "position_rank": dv.position_rank,
+            "trend_30day": dv.trend_30day,
+            "sleeper_id": dv.sleeper_id,
+        }
+
+    return {
+        "risers": [_fmt(r) for r in risers],
+        "fallers": [_fmt(f) for f in fallers],
+    }
+
+
+@app.get("/offseason/cheat-sheet")
+def offseason_cheat_sheet(
+    scoring_format: str = "ppr",
+    use_vbd: bool = True,
+    db: Session = Depends(get_db),
+):
+    """Pre-draft cheat sheet with VBD (Value Based Drafting) tier breaks + scarcity scores.
+
+    For each fantasy position, computes:
+      - VBD = redraft_value − replacement_level (12-team PPR cutoffs)
+      - tier (1..N) with auto-detected breaks at 2× median gap
+      - is_tier_break flag for visual separators
+      - position_scarcity 0-100 (how cliff-like top of position is)
+    Rookies flagged with opportunity grade and year-1 projection.
+    """
+    from src.fantasy.vbd import VBDPlayer, compute_vbd, positional_scarcity
+
+    players = (
+        db.query(DynastyValue)
+        .filter(DynastyValue.is_pick == False)  # noqa: E712
+        .filter(DynastyValue.position.in_(["QB", "RB", "WR", "TE"]))
+        .all()
+    )
+
+    # Build VBD inputs from redraft data
+    vbd_inputs = [
+        VBDPlayer(
+            name=dv.player_name,
+            position=dv.position,
+            redraft_value=dv.redraft_value or 0,
+            redraft_position_rank=dv.redraft_position_rank,
+        )
+        for dv in players
+        if dv.redraft_value is not None
+    ]
+    vbd_map = compute_vbd(vbd_inputs) if use_vbd else {}
+    scarcity = positional_scarcity(vbd_inputs) if use_vbd else {}
+
+    rookie_rows = db.query(RookiePick).all()
+    rookie_by_name: dict[str, RookiePick] = {r.player_name.lower(): r for r in rookie_rows}
+
+    def _tier_label(pos_rank: Optional[int]) -> Optional[str]:
+        if pos_rank is None:
+            return None
+        if pos_rank <= 3:
+            return "elite"
+        if pos_rank <= 8:
+            return "tier1"
+        if pos_rank <= 16:
+            return "tier2"
+        if pos_rank <= 24:
+            return "tier3"
+        return "depth"
+
+    grouped: dict[str, list] = {}
+    for dv in players:
+        pos = dv.position or "Unknown"
+        if pos not in grouped:
+            grouped[pos] = []
+        rookie = rookie_by_name.get(dv.player_name.lower())
+        vbd_data = vbd_map.get(dv.player_name) or {}
+        grouped[pos].append({
+            "id": dv.id,
+            "player_name": dv.player_name,
+            "position": dv.position,
+            "team": dv.team,
+            "age": dv.age,
+            "dynasty_value": dv.value,
+            "dynasty_overall_rank": dv.overall_rank,
+            "dynasty_position_rank": dv.position_rank,
+            "redraft_value": dv.redraft_value,
+            "redraft_overall_rank": dv.redraft_overall_rank,
+            "redraft_position_rank": dv.redraft_position_rank,
+            "trend_30day": dv.trend_30day,
+            "vbd": vbd_data.get("vbd"),
+            "tier": _tier_label(dv.redraft_position_rank or dv.position_rank),
+            "vbd_tier": vbd_data.get("tier"),
+            "is_tier_break": vbd_data.get("is_tier_break", False),
+            "replacement_value": vbd_data.get("replacement_value"),
+            "is_rookie": rookie is not None,
+            "opportunity_grade": rookie.opportunity_grade if rookie else None,
+            "year1_projection": rookie.year1_projection if rookie else None,
+            "nfl_round": rookie.nfl_round if rookie else None,
+            "nfl_pick": rookie.nfl_pick if rookie else None,
+            "sleeper_id": dv.sleeper_id,
+        })
+
+    # Sort each position by VBD desc (or redraft_value if VBD disabled)
+    for pos in grouped:
+        grouped[pos].sort(
+            key=lambda p: (-(p.get("vbd") or p.get("redraft_value") or 0))
+        )
+
+    position_order = ["QB", "RB", "WR", "TE"]
+    ordered = {pos: grouped[pos] for pos in position_order if pos in grouped}
+    for pos in grouped:
+        if pos not in ordered:
+            ordered[pos] = grouped[pos]
+
+    return {
+        "scoring_format": scoring_format,
+        "use_vbd": use_vbd,
+        "positions": ordered,
+        "scarcity": scarcity,
+    }
+
+
+@app.get("/offseason/team/{team}")
+def offseason_team_moves(team: str, db: Session = Depends(get_db)):
+    """All offseason moves for a specific team (arrivals + departures) plus their rookies."""
+    team_upper = team.upper()
+    moves = (
+        db.query(OffseasonMove)
+        .filter(
+            (OffseasonMove.from_team == team_upper) | (OffseasonMove.to_team == team_upper)
+        )
+        .order_by(OffseasonMove.dynasty_value.desc().nulls_last())
+        .all()
+    )
+    rookies = (
+        db.query(RookiePick)
+        .filter(RookiePick.team == team_upper)
+        .order_by(RookiePick.dynasty_overall_rank.asc().nulls_last())
+        .all()
+    )
+    return {
+        "team": team_upper,
+        "arrivals": [_move_to_dict(m) for m in moves if m.to_team == team_upper],
+        "departures": [_move_to_dict(m) for m in moves if m.from_team == team_upper],
+        "draft_picks": [_rookie_to_dict(r) for r in rookies],
+    }
+
+
+# ---------------------------------------------------------------------------
+# NFL Draft Board, Depth Charts, SOS — Phase 7 expansion endpoints
+# ---------------------------------------------------------------------------
+
+
+def _draft_pick_to_dict(p: NFLDraftPick) -> dict:
+    return {
+        "id": p.id,
+        "draft_year": p.draft_year,
+        "overall": p.overall,
+        "round": p.round,
+        "pick_in_round": p.pick_in_round,
+        "player_name": p.player_name,
+        "position": p.position,
+        "college": p.college,
+        "college_full": p.college_full,
+        "nfl_team": p.nfl_team,
+        "nfl_team_name": p.nfl_team_name,
+        "nfl_team_logo": p.nfl_team_logo,
+        "espn_athlete_id": p.espn_athlete_id,
+        "traded": p.traded,
+        "trade_note": p.trade_note,
+        "headshot_url": p.headshot_url,
+    }
+
+
+@app.get("/offseason/draft-board")
+def offseason_draft_board(
+    year: int = 2026,
+    round: Optional[int] = None,
+    position: Optional[str] = None,
+    team: Optional[str] = None,
+    fantasy_only: bool = False,
+    db: Session = Depends(get_db),
+):
+    """Full NFL Draft results for a year — all 257 picks chronologically.
+
+    Filters: round (1-7), position, team (NFL abbreviation), fantasy_only (QB/RB/WR/TE).
+    """
+    q = db.query(NFLDraftPick).filter(NFLDraftPick.draft_year == year)
+    if round is not None:
+        q = q.filter(NFLDraftPick.round == round)
+    if position:
+        q = q.filter(NFLDraftPick.position == position.upper())
+    if team:
+        q = q.filter(NFLDraftPick.nfl_team == team.upper())
+    if fantasy_only:
+        q = q.filter(NFLDraftPick.position.in_(["QB", "RB", "WR", "TE"]))
+    rows = q.order_by(NFLDraftPick.overall.asc()).all()
+    return {
+        "year": year,
+        "total": len(rows),
+        "picks": [_draft_pick_to_dict(p) for p in rows],
+    }
+
+
+@app.get("/offseason/draft-board/by-team/{team}")
+def offseason_draft_board_by_team(team: str, year: int = 2026, db: Session = Depends(get_db)):
+    """All of one team's draft picks for the year."""
+    rows = (
+        db.query(NFLDraftPick)
+        .filter(NFLDraftPick.draft_year == year, NFLDraftPick.nfl_team == team.upper())
+        .order_by(NFLDraftPick.overall.asc())
+        .all()
+    )
+    return {
+        "year": year,
+        "team": team.upper(),
+        "total_picks": len(rows),
+        "picks": [_draft_pick_to_dict(p) for p in rows],
+    }
+
+
+@app.get("/offseason/depth-chart/{team}")
+def offseason_depth_chart(team: str, season: int = 2026, db: Session = Depends(get_db)):
+    """Team's fantasy depth chart by position (QB/RB/WR/TE), redraft-ordered."""
+    rows = (
+        db.query(TeamDepthChart)
+        .filter(TeamDepthChart.team == team.upper(), TeamDepthChart.season == season)
+        .order_by(TeamDepthChart.position, TeamDepthChart.depth_order)
+        .all()
+    )
+    grouped: dict[str, list] = {}
+    for r in rows:
+        pos = r.position
+        if pos not in grouped:
+            grouped[pos] = []
+        grouped[pos].append({
+            "depth_order": r.depth_order,
+            "player_name": r.player_name,
+            "sleeper_id": r.sleeper_id,
+            "age": r.age,
+            "dynasty_value": r.dynasty_value,
+            "dynasty_position_rank": r.dynasty_position_rank,
+            "is_rookie": r.is_rookie,
+        })
+    return {"team": team.upper(), "season": season, "positions": grouped}
+
+
+@app.get("/offseason/depth-chart")
+def offseason_depth_chart_all(season: int = 2026, db: Session = Depends(get_db)):
+    """All teams' depth charts grouped by team → position."""
+    rows = (
+        db.query(TeamDepthChart)
+        .filter(TeamDepthChart.season == season)
+        .order_by(TeamDepthChart.team, TeamDepthChart.position, TeamDepthChart.depth_order)
+        .all()
+    )
+    out: dict[str, dict[str, list]] = {}
+    for r in rows:
+        out.setdefault(r.team, {}).setdefault(r.position, []).append({
+            "depth_order": r.depth_order,
+            "player_name": r.player_name,
+            "sleeper_id": r.sleeper_id,
+            "age": r.age,
+            "dynasty_value": r.dynasty_value,
+            "is_rookie": r.is_rookie,
+        })
+    return {"season": season, "teams": out}
+
+
+@app.get("/offseason/sos")
+def offseason_sos(season: int = 2026, position: Optional[str] = None, db: Session = Depends(get_db)):
+    """Strength of Schedule by team and position.
+
+    Score 0-100 (50=avg, higher=easier). Rank 1=easiest, 32=hardest.
+    """
+    q = db.query(ScheduleStrength).filter(ScheduleStrength.season == season)
+    if position:
+        q = q.filter(ScheduleStrength.position == position.upper())
+    rows = q.order_by(ScheduleStrength.position, ScheduleStrength.sos_rank).all()
+    grouped: dict[str, list] = {}
+    for r in rows:
+        grouped.setdefault(r.position, []).append({
+            "team": r.team,
+            "sos_score": round(r.sos_score, 1),
+            "sos_rank": r.sos_rank,
+            "avg_opp_pts_per_game": round(r.avg_opp_dvp_rank, 2) if r.avg_opp_dvp_rank else None,
+            "games_counted": r.games_played,
+        })
+    return {"season": season, "positions": grouped}
+
+
+@app.get("/offseason/projection/{player_name}")
+def offseason_projection(player_name: str, base_year: int = 2026, db: Session = Depends(get_db)):
+    """3-year dynasty trajectory for a player — current value + Y+1, Y+2, Y+3 projected."""
+    rows = (
+        db.query(DynastyProjection)
+        .filter(
+            DynastyProjection.player_name == player_name,
+            DynastyProjection.base_year == base_year,
+        )
+        .order_by(DynastyProjection.projection_year)
+        .all()
+    )
+    if not rows:
+        raise HTTPException(status_code=404, detail=f"No projection for {player_name}")
+
+    current = (
+        db.query(DynastyValue)
+        .filter(DynastyValue.player_name == player_name)
+        .first()
+    )
+
+    return {
+        "player_name": player_name,
+        "position": rows[0].position,
+        "current_age": current.age if current else None,
+        "current_value": current.value if current else None,
+        "current_overall_rank": current.overall_rank if current else None,
+        "current_position_rank": current.position_rank if current else None,
+        "sleeper_id": rows[0].sleeper_id,
+        "base_year": base_year,
+        "trajectory": [
+            {
+                "year_offset": r.projection_year,
+                "year": base_year + r.projection_year,
+                "projected_age": r.projected_age,
+                "projected_value": r.projected_value,
+                "decay_factor": r.decay_factor,
+                "role_label": r.role_label,
+            }
+            for r in rows
+        ],
+    }
+
+
+@app.get("/offseason/projections/leaderboard")
+def offseason_projections_leaderboard(
+    position: Optional[str] = None,
+    direction: str = "ascending",
+    limit: int = 25,
+    db: Session = Depends(get_db),
+):
+    """Top players whose dynasty value is projected to GROW (ascending) or COLLAPSE (cliff).
+
+    Direction: 'ascending' / 'cliff'. Useful for finding buy-low or sell-high targets.
+    """
+    if direction not in ("ascending", "cliff", "peak", "declining"):
+        raise HTTPException(status_code=400, detail="direction must be ascending|cliff|peak|declining")
+    q = db.query(DynastyProjection).filter(
+        DynastyProjection.projection_year == 1,
+        DynastyProjection.role_label == direction,
+    )
+    if position:
+        q = q.filter(DynastyProjection.position == position.upper())
+    rows = (
+        q.order_by(
+            DynastyProjection.projected_value.desc() if direction == "ascending"
+            else DynastyProjection.projected_value.asc()
+        )
+        .limit(limit)
+        .all()
+    )
+    return {
+        "direction": direction,
+        "position": position,
+        "players": [
+            {
+                "player_name": r.player_name,
+                "position": r.position,
+                "projected_age": r.projected_age,
+                "projected_value": r.projected_value,
+                "decay_factor": r.decay_factor,
+                "role_label": r.role_label,
+            }
+            for r in rows
+        ],
+    }
+
+
+@app.get("/offseason/comps/{rookie_id}")
+def offseason_rookie_comps(rookie_id: int, limit: int = 5, db: Session = Depends(get_db)):
+    """Find historical rookies with similar draft profile to a current rookie.
+
+    Match criteria: same position, draft round within ±1, pick number within ±30.
+    Returns top N comps + a hit-label distribution across the full candidate pool.
+    """
+    rookie = db.query(RookiePick).filter_by(id=rookie_id).first()
+    if not rookie:
+        raise HTTPException(status_code=404, detail="Rookie not found")
+    if not rookie.position:
+        raise HTTPException(status_code=400, detail="Rookie has no position")
+
+    q = db.query(HistoricalRookieComp).filter(HistoricalRookieComp.position == rookie.position)
+    if rookie.nfl_round:
+        q = q.filter(HistoricalRookieComp.nfl_round.between(rookie.nfl_round - 1, rookie.nfl_round + 1))
+    if rookie.nfl_pick:
+        q = q.filter(HistoricalRookieComp.nfl_pick.between(rookie.nfl_pick - 30, rookie.nfl_pick + 30))
+
+    candidates = q.all()
+
+    def _distance(c: HistoricalRookieComp) -> float:
+        d = 0.0
+        if rookie.nfl_pick and c.nfl_pick:
+            d += abs(c.nfl_pick - rookie.nfl_pick)
+        if rookie.nfl_round and c.nfl_round:
+            d += abs(c.nfl_round - rookie.nfl_round) * 5
+        if rookie.age and c.age_at_draft:
+            d += abs(c.age_at_draft - rookie.age) * 3
+        return d
+
+    candidates.sort(key=_distance)
+    top = candidates[:limit]
+
+    hit_dist: dict[str, int] = {}
+    for c in candidates:
+        hit_dist[c.hit_label or "unknown"] = hit_dist.get(c.hit_label or "unknown", 0) + 1
+
+    return {
+        "rookie": {
+            "id": rookie.id,
+            "player_name": rookie.player_name,
+            "position": rookie.position,
+            "team": rookie.team,
+            "nfl_round": rookie.nfl_round,
+            "nfl_pick": rookie.nfl_pick,
+        },
+        "comps": [
+            {
+                "player_name": c.player_name,
+                "season": c.season,
+                "nfl_round": c.nfl_round,
+                "nfl_pick": c.nfl_pick,
+                "college": c.college,
+                "nfl_team": c.nfl_team,
+                "year1_ppr_points": c.year1_ppr_points,
+                "year1_games": c.year1_games,
+                "hit_label": c.hit_label,
+                "match_distance": _distance(c),
+            }
+            for c in top
+        ],
+        "hit_distribution": hit_dist,
+        "sample_size": len(candidates),
+    }
+
+
+@app.get("/offseason/roster-construction/{team}")
+def offseason_roster_construction(team: str, season: int = 2026, db: Session = Depends(get_db)):
+    """Per-team fantasy roster analysis.
+
+    Returns:
+      - target_share_allocation: WR/TE depth chart with redraft value % share
+      - backfield_structure: RB depth chart classified as bellcow / committee / split
+      - qb_situation: starter, age, dynasty trend
+      - thin_positions: list of positions where the depth chart is shallow
+      - net_offseason_moves: arrivals/departures summary
+    """
+    t = team.upper()
+    depth_rows = (
+        db.query(TeamDepthChart)
+        .filter(TeamDepthChart.team == t, TeamDepthChart.season == season)
+        .order_by(TeamDepthChart.position, TeamDepthChart.depth_order)
+        .all()
+    )
+    by_pos: dict[str, list[TeamDepthChart]] = {}
+    for r in depth_rows:
+        by_pos.setdefault(r.position, []).append(r)
+
+    # ── Target share allocation (WR + TE combined) ───────────────
+    pass_catchers = (by_pos.get("WR") or []) + (by_pos.get("TE") or [])
+    total_value = sum((p.dynasty_value or 0) for p in pass_catchers) or 1
+    target_share = []
+    for p in pass_catchers:
+        share = round((p.dynasty_value or 0) / total_value * 100, 1)
+        target_share.append({
+            "player_name": p.player_name,
+            "position": p.position,
+            "depth_order": p.depth_order,
+            "dynasty_value": p.dynasty_value,
+            "is_rookie": p.is_rookie,
+            "value_share_pct": share,
+        })
+    target_share.sort(key=lambda x: -x["value_share_pct"])
+
+    # ── Backfield structure classification ────────────────────────
+    rbs = by_pos.get("RB") or []
+    backfield_label = "unknown"
+    rb_top1 = rbs[0].dynasty_value if rbs else 0
+    rb_top2 = rbs[1].dynasty_value if len(rbs) > 1 else 0
+    if rbs:
+        if rb_top1 and rb_top2 and rb_top2 / max(rb_top1, 1) >= 0.7:
+            backfield_label = "split"
+        elif rb_top1 and rb_top2 and rb_top2 / max(rb_top1, 1) >= 0.4:
+            backfield_label = "committee"
+        else:
+            backfield_label = "bellcow"
+    backfield = {
+        "label": backfield_label,
+        "lead_back": rbs[0].player_name if rbs else None,
+        "lead_back_value": rb_top1,
+        "rotation": [
+            {
+                "player_name": r.player_name,
+                "depth_order": r.depth_order,
+                "dynasty_value": r.dynasty_value,
+                "is_rookie": r.is_rookie,
+            }
+            for r in rbs[:4]
+        ],
+    }
+
+    # ── QB situation ──────────────────────────────────────────────
+    qbs = by_pos.get("QB") or []
+    qb_situation = None
+    if qbs:
+        starter = qbs[0]
+        starter_dv = (
+            db.query(DynastyValue).filter(DynastyValue.player_name == starter.player_name).first()
+        )
+        qb_situation = {
+            "starter": starter.player_name,
+            "age": starter.age,
+            "dynasty_value": starter.dynasty_value,
+            "trend_30day": starter_dv.trend_30day if starter_dv else None,
+            "is_rookie": starter.is_rookie,
+        }
+
+    # ── Thin position detection ──────────────────────────────────
+    thin = []
+    if not qbs or (qbs[0].dynasty_value or 0) < 1500:
+        thin.append({"position": "QB", "reason": "no high-value starter"})
+    if len(rbs) < 2 or (rbs and (rbs[0].dynasty_value or 0) < 2000):
+        thin.append({"position": "RB", "reason": "lacks bellcow / shallow depth"})
+    wrs = by_pos.get("WR") or []
+    if not wrs or (wrs[0].dynasty_value or 0) < 2500:
+        thin.append({"position": "WR", "reason": "no clear WR1"})
+    tes = by_pos.get("TE") or []
+    if not tes or (tes[0].dynasty_value or 0) < 800:
+        thin.append({"position": "TE", "reason": "no fantasy-relevant starter"})
+
+    # ── Offseason moves summary ──────────────────────────────────
+    moves = (
+        db.query(OffseasonMove)
+        .filter((OffseasonMove.from_team == t) | (OffseasonMove.to_team == t))
+        .all()
+    )
+    arrivals = [m for m in moves if m.to_team == t]
+    departures = [m for m in moves if m.from_team == t]
+    rookies = (
+        db.query(RookiePick).filter(RookiePick.team == t)
+        .order_by(RookiePick.nfl_pick.asc().nulls_last())
+        .all()
+    )
+
+    return {
+        "team": t,
+        "season": season,
+        "target_share_allocation": target_share,
+        "backfield_structure": backfield,
+        "qb_situation": qb_situation,
+        "thin_positions": thin,
+        "net_offseason": {
+            "arrivals_count": len(arrivals),
+            "departures_count": len(departures),
+            "rookies_count": len(rookies),
+            "top_arrival": (
+                {"player_name": arrivals[0].player_name, "position": arrivals[0].position}
+                if arrivals else None
+            ),
+            "top_departure": (
+                {"player_name": departures[0].player_name, "position": departures[0].position}
+                if departures else None
+            ),
+            "top_rookie": (
+                {"player_name": rookies[0].player_name, "position": rookies[0].position,
+                 "nfl_pick": rookies[0].nfl_pick, "opportunity_grade": rookies[0].opportunity_grade}
+                if rookies else None
+            ),
+        },
     }

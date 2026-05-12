@@ -71,17 +71,17 @@ def compute_carry_share(stats_df: pl.DataFrame) -> pl.DataFrame:
     carry_share is NOT pre-computed in nflreadpy (Pitfall 2).
     Returns DataFrame with columns: player_id, week, carry_share.
     """
-    # Get team total carries per (team, week)
+    # Get team total carries per (recent_team, week)
     team_carries = (
         stats_df
         .filter(pl.col("carries") > 0)
-        .group_by(["team", "week"])
+        .group_by(["recent_team", "week"])
         .agg(pl.col("carries").sum().alias("team_carries"))
     )
     # Join back to individual player carries and compute share
     result = (
         stats_df
-        .join(team_carries, on=["team", "week"], how="left")
+        .join(team_carries, on=["recent_team", "week"], how="left")
         .with_columns(
             pl.when(pl.col("team_carries").is_not_null() & (pl.col("team_carries") > 0))
             .then(pl.col("carries") / pl.col("team_carries"))

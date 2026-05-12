@@ -8,10 +8,11 @@ from src.fantasy.normalize import normalize_players, normalize_matchups
 
 @pytest.fixture
 def crosswalk_df():
-    """Polars crosswalk DataFrame with 3 players having gsis_id and sleeper_id."""
+    """Polars crosswalk DataFrame with 3 players having gsis_id, sleeper_id, and pfr_id."""
     return pl.DataFrame({
         "gsis_id": ["00-0001111", "00-0002222", "00-0003333"],
         "sleeper_id": ["123", "456", "789"],
+        "pfr_id": ["00-0001111", "00-0002222", "00-0003333"],
     })
 
 
@@ -54,7 +55,7 @@ def snaps_df_4weeks():
     for week in [14, 15, 16, 17]:
         for pid, team, snap_pct in player_data:
             rows.append({
-                "pfr_id": pid,   # snap counts use pfr_id mapped from player_id
+                "pfr_player_id": pid,
                 "player_id": pid,
                 "team": team,
                 "week": week,

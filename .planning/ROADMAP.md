@@ -106,10 +106,23 @@ Plans:
   5. Draft board supports configurable snake format (8-14 teams) with round-by-round pick order computed automatically
 **Plans**: TBD
 
+### Phase 7: My Team — ESPN Integration & Custom Leagues
+**Goal**: Users can build a custom roster, get personalized START/SIT recommendations for their actual players, and connect their ESPN league.
+**Depends on**: Phase 6
+**Status**: Complete (2026-04-27)
+**What was built**: `/leagues` CRUD (UserLeague + UserRosterPlayer models), Clerk JWT auth, `/my-team` ESPN endpoint, My Team frontend (league list, setup flow, roster page with verdicts).
+
+### Phase 8: iOS App
+**Goal**: A native iOS app with full feature parity — Home/Search, Player Detail, Compare, Trade, My Team, Draft Room — runnable on simulator and device via Expo Go.
+**Depends on**: Phase 7
+**Status**: In progress (2026-04-27)
+**Stack**: Expo SDK 53 · Expo Router v4 · NativeWind v4 · Clerk Expo · TypeScript
+**Entry point**: `mobile/` directory at project root
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -119,3 +132,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 4. Reliability & Enhancement | 3/3 | Complete    | 2026-04-16 |
 | 5. Dynasty Trade Analyzer | TBD/TBD | Complete    | 2026-04-16 |
 | 6. Dynasty Draft Room | 3/3 | Complete    | 2026-04-17 |
+| 7. My Team + ESPN Integration | — | Complete    | 2026-04-27 |
+| 8. iOS App | — | In progress | — |

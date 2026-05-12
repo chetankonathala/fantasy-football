@@ -41,6 +41,9 @@ export default function RootLayout({
               <Link href="/draft" className="text-sm text-[#A5ACAF] hover:text-white transition-colors">
                 Draft Room
               </Link>
+              <Link href="/offseason" className="text-sm text-[#A5ACAF] hover:text-white transition-colors">
+                Offseason
+              </Link>
               <AuthNav />
             </div>
             <div className="w-72">

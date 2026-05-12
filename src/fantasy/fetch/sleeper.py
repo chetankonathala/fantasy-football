@@ -1,4 +1,4 @@
-"""Sleeper API client — fetch all NFL players and extract injury fields."""
+"""Sleeper API client — fetch all NFL players and extract injury/draft fields."""
 import requests
 
 SLEEPER_PLAYERS_URL = "https://api.sleeper.app/v1/players/nfl"
@@ -60,3 +60,38 @@ def extract_player_data(sleeper_id: str, player: dict) -> dict:
         "status": player.get("status") or "",
         "injury_start_date": player.get("injury_start_date") or "",
     }
+
+
+def extract_rookie_data(sleeper_id: str, player: dict) -> dict:
+    """Extract draft and identity fields for a 2026 rookie from a Sleeper player object."""
+    return {
+        "sleeper_id": sleeper_id,
+        "player_name": player.get("full_name", ""),
+        "position": player.get("position"),
+        "team": player.get("team"),
+        "college": player.get("college"),
+        "nfl_round": player.get("draft_round"),
+        "nfl_pick": player.get("draft_number"),
+        "age": player.get("age"),
+    }
+
+
+def fetch_rookies(draft_year: int = 2026) -> list[dict]:
+    """Return all players with years_exp == 0 and draft_year matching, from Sleeper.
+
+    Each entry is the raw Sleeper player dict with the sleeper_id injected as 'sleeper_id'.
+    Filters to fantasy-relevant positions only (QB, RB, WR, TE).
+    """
+    all_players = fetch_sleeper_players()
+    fantasy_positions = {"QB", "RB", "WR", "TE"}
+    rookies = []
+    for pid, player in all_players.items():
+        if player.get("years_exp") != 0:
+            continue
+        if str(player.get("draft_year", "")) != str(draft_year):
+            continue
+        if player.get("position") not in fantasy_positions:
+            continue
+        player["sleeper_id"] = pid
+        rookies.append(player)
+    return rookies

@@ -34,3 +34,13 @@ def is_pick_entry(entry: dict) -> bool:
     """Return True if this FantasyCalc entry represents a draft pick."""
     name: str = entry.get("player", {}).get("name", "")
     return "Pick" in name or "pick" in name
+
+
+def fetch_redraft_values(num_qbs: int = 1, num_teams: int = 12, ppr: int = 1) -> list[dict]:
+    """Fetch redraft (single-season) values from FantasyCalc.
+
+    Same shape as dynasty values, but `value` reflects 2026-only fantasy production
+    consensus rather than long-term dynasty asset value. Use for depth charts and
+    year-1 opportunity assessment.
+    """
+    return fetch_dynasty_values(is_dynasty=False, num_qbs=num_qbs, num_teams=num_teams, ppr=ppr)
